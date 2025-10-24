@@ -1,0 +1,221 @@
+return function()
+	local fakeEvent = require(script:WaitForChild'FakeEvent')
+	local fakemouse = script.Client
+	local sc = getfenv(2).script
+		local Player;
+		if(sc.Parent:IsA'PlayerGui')then
+			Player=sc.Parent.Parent
+		elseif(script.Parent.Parent:IsA'Model')then
+			Player = game:service'Players':GetPlayerFromCharacter(script.Parent.Parent)
+		end
+		local ScriptCreated = {}
+		
+		assert(Player and Player:IsA'Player')
+		local event = Instance.new("RemoteEvent")
+		event.Name='INPUTEVENT_'..sc.Name..game:service'HttpService':GenerateGUID(0)
+		event.Parent=Player.Character;
+		local gcp = Instance.new("RemoteFunction")
+		gcp.Name='GetClientProperty'..event.Name
+		gcp.Parent=Player.Character;
+		local scp = Instance.new("RemoteEvent")
+		scp.Name='SetClientProperty'..event.Name
+		scp.Parent=Player.Character;
+		local loudnesses = {}
+		local function GetClientProperty(inst,prop)
+			if(prop == 'PlaybackLoudness' and loudnesses[inst])then 
+				return loudnesses[inst] 
+			elseif(prop == 'PlaybackLoudness')then
+				return gcp:InvokeClient(Player,'RegSound',inst)
+			end
+			return gcp:InvokeClient(Player,inst,prop)
+		end
+		local function SetClientProperty(inst,idx,val)
+			scp:FireClient(Player,inst,idx,val)	
+		end
+		
+		local FakeMouse = fakemouse:Clone();
+		FakeMouse.Parent = Player.Character;
+		FakeMouse:WaitForChild'Remote'.Value=event
+		FakeMouse.Disabled = false
+		
+		local fakes={}
+		
+		local object={}
+		object.__index=function(self,idx)
+			local val = rawget(self,idx) or rawget(self,'real')[idx];
+			if(typeof(val)=='function')then
+				return function(self2,...)
+					local realFunc = (rawget(self,'real') or {})[idx]==val
+					return val((realFunc and self2==self and rawget(self,'real') or self2),...)
+				end
+			end
+			return val
+		end
+		
+		object.__type='Instance'
+		object.__tostring=function(self)
+			return rawget(self,'real').Name
+		end
+		
+		gcp.OnServerInvoke = function(plr,inst,play)
+			if plr~=Player then return end
+			if(inst and typeof(inst) == 'Instance' and inst:IsA'Sound')then
+				loudnesses[inst]=play	
+			end
+		end
+					
+		local function wrapObject(realobj)
+			local fakeobj = {real=realobj}
+			if(realobj.ClassName=='Sound')then
+				local needsLoudness=false;
+				setmetatable(fakeobj,{__index=function(s,i)
+					if(i=='PlaybackLoudness')then
+						needsLoudness=true;
+						return loudnesses[realobj] or 0
+					else
+						return rawget(object,'__index')(s,i)
+					end
+				end,
+				__type='Instance',
+				__tostring=function(self)
+					return rawget(self,'real').Name
+				end,
+				__newindex=function(s,i,v)
+					realobj[i]=v
+				end})
+				coroutine.wrap(function()
+					repeat wait() until needsLoudness;
+					GetClientProperty(realobj,'PlaybackLoudness')
+				end)()
+			elseif(realobj.ClassName=='ObjectValue')then
+				setmetatable(fakeobj,object)
+				getmetatable(fakeobj).__newindex=function(s,i,v)
+					if(i=='Value' and fakes[v])then
+						realobj.Value = fakes[v]
+					else
+						realobj[i]=v
+					end
+				end
+			elseif(realobj.ClassName=='TextBox')then
+				ScriptCreated[realobj]=true;
+			end
+			
+			fakes[fakeobj]=realobj
+			
+			return fakeobj
+		end
+		
+		local function getReal(i)
+			return fakes[i] or i
+		end
+		local fakeGame={real=game};
+		local fakeInstance={new=function(objName,par)
+			local realobj = Instance.new(objName)
+			local fakeobj = wrapObject(realobj)
+			
+			realobj.Parent=getReal(par)
+			local wrapped = getmetatable(fakeobj) and getmetatable(fakeobj).__index and true or false
+			return wrapped and fakeobj or realobj
+		end};
+		
+		local fakePlayer={};
+		fakePlayer.real=Player;
+		fakePlayer.mouse={
+			KeyDown=fakeEvent();
+			KeyUp=fakeEvent();
+			Button1Down=fakeEvent();
+			Button1Up=fakeEvent();
+			Button2Down=fakeEvent();
+			Button2Up=fakeEvent();
+			Target=nil;
+			Hit=CFrame.new();
+		}
+		fakePlayer.GetMouse=function(self)
+			return self.mouse;	
+		end
+
+		local services = {
+			Players={real=game:service'Players',LocalPlayer=fakePlayer,localPlayer=fakePlayer};
+			UserInputService={real=game:service'UserInputService',InputBegan=fakeEvent(),InputEnded=fakeEvent(),InputChanged=fakeEvent()};
+			Debris={real=game:service'Debris',AddItem=function(self,item,timer)
+				if(fakes[item])then
+					item = fakes[item]
+				end
+				self.real:AddItem(item,timer)
+			end};
+			RunService={
+				_bound={},
+				_lastCall=tick();
+				real=game:service'RunService',
+				RenderStepped=game:service'RunService'.Stepped,
+				BindToRenderStep=function(self,n,_,func)
+					self._bound[n]=func;
+				end;
+				UnbindFromRenderStep=function(self,n,_,func)
+					self:BindToRenderStep(n)
+				end;	
+			};
+			
+		}
+		services.Debris.addItem=services.Debris.AddItem
+		 
+		services.RunService.RenderStepped:connect(function()
+			local ct = tick();
+			local lt = services.RunService._lastCall;
+			local dt = ct-lt
+			services.RunService._lastCall=ct;
+			for name,func in next, services.RunService._bound do
+				func(dt)
+			end
+		end)
+		
+		local function getService(self,name)
+			if(self==fakeGame)then
+				return services[name] or game:service(name)
+			end
+		end
+		
+		fakeGame.service=getService;
+		fakeGame.GetService=getService;
+		for i,v in next, services do 
+			fakes[v]=v.real
+			fakeGame[v.real.Name]=v
+			setmetatable(v,object)
+		end
+		
+		setmetatable(fakeGame,object)
+		setmetatable(fakePlayer,object)
+		fakes[fakeGame]=game
+		fakes[fakePlayer]=Player
+		
+		getfenv(2).game=fakeGame
+		getfenv(2).Instance=fakeInstance;
+		
+		getfenv(2).Wrap=wrapObject; -- lets you wrap your instances manually so that you have access to .PlaybackLoudness on sounds, etc.
+	
+		event.OnServerEvent:connect(function(self,data)
+			local type = data.Type;
+			if(data.Event)then
+				local event = (type=='Mouse' and fakePlayer.mouse or type=='UserInput' and services.UserInputService or {})[data.Event]
+				local eventIsFake = pcall(function()
+					return event._connections~=nil
+				end)
+				if(event and eventIsFake)then
+					event:fire(unpack(data.Args))
+				end
+			elseif(type=='Mouse')then
+				fakePlayer.mouse.Target=data.Target
+				fakePlayer.mouse.Hit=data.Hit
+			elseif(type=='TextboxReplication')then
+				if(ScriptCreated[data.TextBox])then
+					data.TextBox.Text = data.Text
+				end
+			end
+		end)
+		
+		repeat wait() until gcp:InvokeClient(Player,'Ready')
+		coroutine.wrap(function() print("using EzConvert by "..game:service'Players':GetNameFromUserIdAsync(5719877)) end)
+		return GetClientProperty,SetClientProperty;
+	--else
+		--return error("Make sure you're using a server-script!")
+	end
