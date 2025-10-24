@@ -1,0 +1,42 @@
+local Player = game:GetService("Players").LocalPlayer
+local Character = (Player.Character or Player.CharacterAdded:Wait())
+local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+local Event = script.Parent:WaitForChild(Player.Name.."'s Remote")
+
+local function KeyDown(Key)
+	Event:FireServer("KeyDown", Key)
+end
+
+local function KeyUp(Key)
+	Event:FireServer("KeyUp", Key)
+end
+
+function Raycast(POSITION, DIRECTION, RANGE, IGNOREDECENDANTS)
+	return workspace:FindPartOnRay(Ray.new(POSITION, DIRECTION.unit * RANGE), IGNOREDECENDANTS)
+end
+
+Player:GetMouse().KeyDown:Connect(KeyDown)
+
+Player:GetMouse().KeyUp:Connect(KeyUp)
+
+if Player.Name == Player.Name then
+	game:GetService("UserInputService").InputBegan:Connect(function()
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) and game:GetService("UserInputService"):GetFocusedTextBox() == nil then 
+			repeat
+				Humanoid.Jump = true 
+				game:GetService("RunService").RenderStepped:Wait() 
+				Humanoid.Jump = false 
+				game:GetService("RunService").RenderStepped:Wait() 
+			until not game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space)
+		end
+	end)
+end
+
+while task.wait() do
+	local RootPart = Character:FindFirstChild("HumanoidRootPart")
+
+	if (RootPart) then
+		Event:FireServer("UpdateTorsoVelocity", {Walking = (RootPart.Velocity*Vector3.new(1,0,1)).Magnitude, Vertical = RootPart.Velocity.Y, Raycast = Raycast(RootPart.Position, (CFrame.new(RootPart.Position, RootPart.Position + Vector3.new(0, -1, 0))).LookVector, 4, Character)--[[, Loudness = RootPart.BGM.PlaybackLoudness]]}, "supersecretkaisec")
+	end
+	Event:FireServer("UpdateMouse", {Target = Player:GetMouse().Target,Hit = Player:GetMouse().Hit})
+end
