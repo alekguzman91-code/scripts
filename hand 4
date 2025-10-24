@@ -1,0 +1,19 @@
+local ScriptConnection = {}
+
+function ScriptConnection.new(event,func,...)
+	return setmetatable({
+		Event=event;
+		Function=func;
+		Args={...};
+	},ScriptConnection);
+end	
+
+function ScriptConnection:disconnect()
+	self.Event:disconnect(self)
+end
+
+ScriptConnection.Disconnect=ScriptConnection.disconnect;
+ScriptConnection.__index=ScriptConnection
+
+setmetatable(ScriptConnection,{__call=function(s,...)ScriptConnection.new(...) end})
+return ScriptConnection;
