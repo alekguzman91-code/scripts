@@ -1,0 +1,543 @@
+local rs = game:GetService("RunService")
+local tweens = game:GetService("TweenService")
+
+d = workspace:WaitForChild("LastStarMouseIgnore",99999)
+game.ReplicatedStorage:WaitForChild("LastStarEffects",99999)
+game.ReplicatedStorage:WaitForChild("LastStarChatRemote",99999)
+game.ReplicatedStorage.LastStarChatRemote.OnClientEvent:Connect(function(player,msg)
+	local plr = workspace:FindFirstChild(player)
+	if plr then
+		local head,laststar = plr:FindFirstChild("Head"),plr:FindFirstChild("LastStar")
+		if head and laststar then
+			local CG = head:FindFirstChild("ChatGui")
+			if CG then
+				if not head:FindFirstChild("ChatReset") then
+					local st = Instance.new("NumberValue",head)
+					st.Name = "ChatReset"
+				end
+				local chattype = "Typewriter"
+				if script.Parent:FindFirstChild("LastStar") then
+					if script.Parent.LastStar:FindFirstChild("Settings") then
+						chattype = script.Parent.LastStar.Settings:WaitForChild("ChatType").Value
+					end
+				end
+				head.ChatReset.Value = 1
+				wait(.1)
+				head.ChatReset.Value = 0
+				local info = TweenInfo.new(1,Enum.EasingStyle.Sine,Enum.EasingDirection.In,0,false,0)
+				local prop={TextTransparency=1;TextStrokeTransparency=1}
+				local tween = tweens:Create(CG.Content,info,prop)
+				local tween1 = tweens:Create(CG.Content1,info,prop)
+				local tween2 = tweens:Create(CG.Content2,info,prop)
+				local chatcooldown = 0
+				
+				CG.Content.Text = ""
+				CG.Content.TextTransparency=0
+				CG.Content.TextStrokeTransparency=0
+				CG.Content1.Text = ""
+				CG.Content1.TextTransparency=0.3
+				CG.Content1.TextStrokeTransparency=0.3
+				CG.Content2.Text = ""
+				CG.Content2.TextTransparency=0.7
+				CG.Content2.TextStrokeTransparency=0.7
+				if chattype == "Typewriter" then
+					for i = 1, #msg do
+						game:GetService("RunService").Heartbeat:Wait()
+						CG.Content.Text = string.sub(msg,1,i)
+						CG.Content1.Text = string.sub(msg,1,i)
+						CG.Content2.Text = string.sub(msg,1,i)
+						local s = plr.LastStar.Sounds.ChatSound:Clone()
+						s.Parent = head
+						s.Playing=true
+						game.Debris:AddItem(s,1.3)
+						if head.ChatReset.Value == 1 then break end
+					end
+				else
+					CG.Content.Text = msg
+					CG.Content1.Text = msg
+					CG.Content2.Text = msg
+					local s = plr.LastStar.Sounds.ChatSound:Clone()
+					s.Parent = head
+					s.Playing=true
+					game.Debris:AddItem(s,1.3)
+				end
+				local dur = #msg/10+2
+				chatcooldown = dur
+				repeat
+					wait()
+					chatcooldown = chatcooldown - .03
+				until chatcooldown <= 0 or head.ChatReset.Value == 1
+				if head.ChatReset.Value == 0 then
+					tween:Play()
+					tween1:Play()
+					tween2:Play()
+				end
+			end
+		end
+	end
+end)
+
+
+function effect(shape,cframe,sizevector,color,material,transparency,tweentime,easingstyle,easingdirection,reverse,tableprop,newtransparency,transparencystyle)
+	local s = d:FindFirstChild(shape)
+	local count = 0
+	for i,v in pairs(d:GetChildren()) do
+		if v.Name == "EFFECTLIMITER" then
+			count += 1
+		end
+	end
+	local enableeff = true
+	if script.Parent:FindFirstChild("LastStar") then
+		if script.Parent.LastStar:FindFirstChild("Settings") then
+			if script.Parent.LastStar.Settings:FindFirstChild("EffectLimit") then
+				if count > script.Parent.LastStar.Settings.EffectLimit.Value-1 then
+					enableeff = false
+				end
+			end
+		end
+	end
+	if enableeff == true then
+		if s then
+			local h = s:Clone()
+			local a = 1
+			if reverse == true then
+				a = 2
+			end
+			if h then
+				local limitindicator = Instance.new("StringValue",d)
+				limitindicator.Name = "EFFECTLIMITER"
+				game.Debris:AddItem(limitindicator,tweentime*a)
+				game.Debris:AddItem(h,tweentime*a)
+				h.Name = "EFFECT"
+				h.Parent = d
+				h.CFrame = cframe
+				h.Size = sizevector
+				h.Color = color
+				h.Material = material
+				h.Anchored=true
+				h.CanCollide=false
+				h.CastShadow=false
+				h.Massless=true
+				h.Transparency=transparency
+				local info = TweenInfo.new(tweentime,easingstyle,easingdirection,0,reverse,0)
+				local prop = tableprop
+				local tween = tweens:Create(h,info,prop)
+				tween:Play()
+				local transparencyinfo = TweenInfo.new(tweentime,transparencystyle,easingdirection,0,reverse,0)
+				local transparencyprop = {Transparency=newtransparency}
+				local transparencytween = tweens:Create(h,transparencyinfo,transparencyprop)
+				transparencytween:Play()
+			end
+		else
+			warn(shape.." is not a valid shape.")
+		end
+	end
+end
+
+game.ReplicatedStorage.LastStarEffects.OnClientEvent:Connect(function(shape,cframe,sizevector,color,material,transparency,tweentime,easingstyle,easingdirection,reverse,tableprop,newtransparency,transparencystyle)
+	effect(shape,cframe,sizevector,color,material,transparency,tweentime,easingstyle,easingdirection,reverse,tableprop,newtransparency,transparencystyle)
+end)
+
+local hum = script.Parent:WaitForChild("Humanoid")
+local root = script.Parent:WaitForChild("HumanoidRootPart")
+
+local basecamoffset = hum.CameraOffset
+
+game.ReplicatedStorage:WaitForChild("LastStarCamShake",99999)
+game.ReplicatedStorage.LastStarCamShake.OnClientEvent:Connect(function(position,range,power)
+	local mag = (root.Position-position).Magnitude
+	local enable = true
+	if script.Parent:FindFirstChild("LastStar") then
+		if script.Parent.LastStar.Settings.Camshake.Value == 0 then
+			enable = false
+		end
+	end
+	if mag <= range and enable then
+		power = power
+		if script.Camshake.Power.Value < power then
+			script.Camshake.Power.Value = power
+		end
+	end
+end)
+
+script:WaitForChild("Camshake")
+script.Camshake:WaitForChild("m") script.Camshake:WaitForChild("x") script.Camshake:WaitForChild("y") script.Camshake:WaitForChild("z")
+for i,v in pairs({script.Camshake.m;script.Camshake.x;script.Camshake.y;script.Camshake.z}) do
+	local info = TweenInfo.new((.05+(i/15))/2,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,math.huge,true,0)
+	local prop = {Value=1}
+	local tween = tweens:Create(v,info,prop)
+	tween:Play()
+end
+
+rs.RenderStepped:Connect(function()
+	local v,x,y,z,m = script.Camshake.Power.Value,script.Camshake.x.Value,script.Camshake.y.Value,script.Camshake.z.Value,script.Camshake.m.Value
+	hum.CameraOffset = basecamoffset+Vector3.new(v*x,v*y,v*z)
+	workspace.CurrentCamera.CFrame *= CFrame.Angles(0,0,math.rad((v*m)*.8))
+end)
+
+coroutine.resume(coroutine.create(function()
+	while true do
+		wait(1/60)
+		script.Camshake.Power.Value = math.clamp(script.Camshake.Power.Value-(script.Camshake.Power.Value*.2),0,math.huge)
+	end
+end))
+
+function ray(position,vector,ignoretable)
+	local ray = Ray.new(position,vector)
+	local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray,ignoretable,false,true)
+	return raypart,raypos,normal
+end
+
+function cframerandomizer(minX,maxX,minY,maxY,minZ,maxZ)
+	return (CFrame.Angles(math.rad(math.random(minX,maxX)),math.rad(math.random(minY,maxY)),math.rad(math.random(minZ,maxZ))))
+end
+
+local flying = {
+	["EXECUTION"]=true,
+	["ANARCHY"]=true,
+	["NIHIL"]=true,
+	["SYSTEM"]=true,
+	["SAGITTARIUS"]=true,
+	["ABSOLUTION"]=true,
+	["VINDICTIVE"]=true,
+	["TEMPEST"]=true,
+	["DISSONANCE"]=true,
+	["PERDURANCE"]=true,
+	["WARPSPEED"]=true,
+	["INTRICACY"]=true,
+	["APOCALYPSE"]=true,
+}
+
+local auravaltable = {"apexauraval","harmonyoffset","infernumdelay","repressionoffset","executionoffset","virtuedelay","flyingdelay","anarchydelay","anarchyoffset"}
+
+local sine = 0
+local change = 1
+while true do
+	game:GetService("RunService").Heartbeat:Wait()
+	sine += change
+	
+	for i,v in pairs(d:WaitForChild("Projectiles"):GetChildren()) do
+		if v.Name == "INFERNUMPROJECTILE" then
+			local cf = v.Part.CFrame*cframerandomizer(-50,50,-50,50,-50,50)
+			effect("Sphere",cf,Vector3.new(6,6,6),v.Part.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{Size=Vector3.new(1,1,1);CFrame=cf*CFrame.new(0,0,10)},1,Enum.EasingStyle.Sine)
+			effect("Sphere",cf,Vector3.new(6,6,6),v.Part.Color,Enum.Material.Neon,0,.2,Enum.EasingStyle.Linear,Enum.EasingDirection.Out,false,{Size=Vector3.new(11,11,11)},1,Enum.EasingStyle.Sine)
+		elseif v.Name == "ANARCHYCOIN" then
+			local cf = v.Part.CFrame*cframerandomizer(-50,50,-50,50,-50,50)
+			effect("Sphere",cf,Vector3.new(6,6,6),v.Part.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{Size=Vector3.new(1,1,1);CFrame=cf*CFrame.new(0,0,10)},1,Enum.EasingStyle.Sine)
+			effect("Sphere",cf,Vector3.new(11+4*math.cos(sine/10),11+4*math.cos(sine/10),11+4*math.cos(sine/10)),v.Part.ANARCHYCOINHITBOX.Color,Enum.Material.ForceField,0,.7,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{Size=Vector3.new(0,0,0);Color=v.Part.Color},1,Enum.EasingStyle.Quint)
+		end
+	end
+	local enableauras = "You"
+	if script.Parent:FindFirstChild("LastStar") then
+		if script.Parent.LastStar:FindFirstChild("Settings") then
+			enableauras = script.Parent.LastStar.Settings:WaitForChild("Auras").Value
+		end
+	end
+	for i,v in pairs(game.Players:GetChildren()) do
+		if v.Character then
+			if v.Character:FindFirstChild("LastStar") then
+				local plr = v.Character
+				local Root = plr:FindFirstChild("HumanoidRootPart")
+				local Head = plr:FindFirstChild("Head")
+				local wing1 = plr:FindFirstChild("Wing1")
+				local fury = plr.LastStar:WaitForChild("Values"):WaitForChild("Fury")
+				local NG,chat,primary,secondary = nil,nil,nil,nil
+				if Head then
+					NG = Head:FindFirstChild("NameGui")
+					chat = Head:FindFirstChild("ChatGui")
+				end
+				if wing1 then
+					primary = wing1:FindFirstChild("Primary")
+					secondary = wing1:FindFirstChild("Secondary")
+				end
+				local Hum = plr:FindFirstChild("Humanoid")
+
+				if Root and Head and wing1 and NG and Hum and secondary and primary then
+					for x,z in pairs(auravaltable) do
+						if not Head:FindFirstChild(z) then
+							local u = Instance.new("NumberValue",Head)
+							u.Name = z
+							if z == "harmony" then
+								u.Value = 180
+							end
+						end
+					end
+					
+					if fury.Value == false then
+						NG.StudsOffset = Vector3.new(.2*math.cos(sine/44),8.5+.5*math.cos(sine/48.6),.2*math.cos(sine/37))
+						NG.LowerHalf.FormName.Position = UDim2.new(.5,7*math.cos(sine/55),0,7*math.cos(sine/50))
+						NG.LowerHalf.FormName.Rotation = 3*math.cos(sine/36)
+						NG.LowerHalf.Rotation = 2*math.cos(sine/65)
+						NG.UpperHalf.Rotation = 3*math.cos(sine/80)
+						NG.UpperHalf.Position = UDim2.new(0.5,5*math.cos(sine/49),0,5*math.cos(sine/36))
+						NG.UpperHalf.Center.Inner.Bar.Size = UDim2.new(Hum.Health/Hum.MaxHealth,0,1,0)
+					else
+						function g()
+							return(math.random(-10,10)/10)
+						end
+						NG.StudsOffset = Vector3.new(.2*g(),8.5+.5*g(),.2*g())
+						NG.LowerHalf.FormName.Position = UDim2.new(.5,7*g(),0,7*g())
+						NG.LowerHalf.FormName.Rotation = 3*g()
+						NG.LowerHalf.Rotation = 2*g()
+						NG.UpperHalf.Rotation = 3*g()
+						NG.UpperHalf.Position = UDim2.new(0.5,5*g(),0,5*g())
+						NG.UpperHalf.Center.Inner.Bar.Size = UDim2.new(math.random(0,1000)/1000,0,1,0)
+					end
+
+					local enabletwitching = true
+
+					if script.Parent then
+						if script.Parent:FindFirstChild("LastStar") then
+							if script.Parent.LastStar:FindFirstChild("Settings") then
+								if script.Parent.LastStar.Settings:WaitForChild("ChatType").Value == "Simple" then
+									enabletwitching = false
+								end
+							end
+						end
+					end
+					
+					if chat then
+						local c1,c2,c3 = chat:WaitForChild("Content",.1),chat:WaitForChild("Content1",.1),chat:WaitForChild("Content2",.1)
+						if enabletwitching == true and c1 and c2 and c3 then
+							for i,v in pairs({chat.Content,chat.Content1,chat.Content2}) do
+								v.TextColor3 = NG.LowerHalf.FormName.TextColor3
+								v.TextStrokeColor3 = NG.LowerHalf.FormName.TextStrokeColor3
+								local info = TweenInfo.new(.06,Enum.EasingStyle.Linear,Enum.EasingDirection.In,0,false,0)
+								local prop = {Rotation = math.random(-10,10);Size = UDim2.new(0,800,0,(math.random(200,240)/10))}
+								local tween = tweens:Create(v,info,prop)
+								tween:Play()
+							end
+						elseif c1 and c2 and c3 then
+							for i,v in pairs({chat.Content,chat.Content1,chat.Content2}) do
+								v.TextColor3 = NG.LowerHalf.FormName.TextColor3
+								v.TextStrokeColor3 = NG.LowerHalf.FormName.TextStrokeColor3
+								v.Rotation = 0
+								v.Size = UDim2.new(0,800,0,22)
+							end
+						end
+					end
+					local info = TweenInfo.new(.06,Enum.EasingStyle.Linear,Enum.EasingDirection.In,0,false,0)
+					local prop = {StudsOffset = Vector3.new(0,math.random(24,25)/10,0)}
+					local tween = tweens:Create(chat,info,prop)
+					tween:Play()
+
+					if not game.Players.LocalPlayer.Character:FindFirstChild("LastStar") or enableauras == "All" or enableauras == "You" and plr.Name == script.Parent.Name then
+						local apexauraval = Head:WaitForChild("apexauraval")
+						local harmonyoffset = Head:WaitForChild("harmonyoffset")
+						local infernumdelay = Head:WaitForChild("infernumdelay")
+						local repressionoffset = Head:WaitForChild("repressionoffset")
+						local executionoffset = Head:WaitForChild("executionoffset")
+						local virtuedelay = Head:WaitForChild("virtuedelay")
+						local flyingdelay = Head:WaitForChild("flyingdelay")
+						local anarchydelay = Head:WaitForChild("anarchydelay")
+						local anarchyoffset = Head:WaitForChild("anarchyoffset")
+						
+						local wingtable = {
+							Head.Parent:FindFirstChild("Wing1");
+							Head.Parent:FindFirstChild("Wing2");
+							Head.Parent:FindFirstChild("Wing3");
+							Head.Parent:FindFirstChild("Wing4");
+							Head.Parent:FindFirstChild("Wing5");
+							Head.Parent:FindFirstChild("Wing6");
+						}
+						for u,wing in pairs(wingtable) do
+							if wing then
+								local EndNode = wing.TrailFinish
+								local S1,S2,SM = wing.TrailS1,wing.TrailS2,wing.TrailSM
+								
+								local S1data,S2data,SMdata = nil,nil,nil
+								
+								for g,node in ipairs({S1,S2,SM}) do
+									local mag = (EndNode.Position-node.Position).Magnitude
+									local dir = CFrame.new(node.Position,EndNode.Position).LookVector.Unit*mag
+									local ray = Ray.new(node.Position,dir)
+									local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray,{plr,d},false,true)
+									if raypart then
+										local magnitude = (node.Position-raypos).Magnitude
+										if g == 1 then
+											S1data = {raypart,raypos,normal,magnitude}
+										elseif g == 2 then
+											S2data = {raypart,raypos,normal,magnitude}
+										else
+											SMdata = {raypart,raypos,normal,magnitude}
+										end
+									end
+								end
+								
+								if S1data and S2data and SMdata then
+									local length = (S1data[2]-S2data[2]).Magnitude
+									effect("Sphere",CFrame.new(SMdata[2],SMdata[2]+SMdata[3])*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(wing.Primary.Orientation.Y),0),Vector3.new(.7,.2,length),wing1.Primary.Color,Enum.Material.Neon,0,2,Enum.EasingStyle.Quint,Enum.EasingDirection.In,false,{Size=Vector3.new(0,0,0)},1,Enum.EasingStyle.Quint)
+								end
+								
+							end
+						end
+
+						if flying[plr.LastStar.Values.CurrentBaseForm.Value] then
+							flyingdelay.Value = flyingdelay.Value + 1
+							if flyingdelay.Value == 4 then
+								flyingdelay.Value = 0
+								local raypart,raypos,normal = ray(Root.Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									for i = 1,2 do
+										local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*cframerandomizer(0,0,0,360,0,0)
+										local a = math.random(50,100)*(1+(.25*math.cos(sine/30)))
+										local c = wing1.Primary.Color
+										if i == 1 then c = wing1.Secondary.Color end
+										if NG.LowerHalf.FormName.Text ~= "VOID" then
+											effect("LightWind",cf,Vector3.new(0,0,0),c,Enum.Material.Neon,0,.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(a*1.2,0,a*1.2);CFrame=cf*cframerandomizer(0,0,-50,50,0,0)},1,Enum.EasingStyle.Sine)
+											--effect("HeavyShockwave",cf,Vector3.new(0,0,0),c,Enum.Material.Neon,0,.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(a*.6,0,a*.6);CFrame=cf*cframerandomizer(0,0,-50,50,0,0)},1,Enum.EasingStyle.Sine)
+										else
+											effect("LightWind",cf,Vector3.new(0,0,0),wing1.Primary.Color,Enum.Material.Neon,0,.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(a*1.2,0,a*1.2);CFrame=cf*cframerandomizer(0,0,-50,50,0,0);Color=wing1.Secondary.Color},1,Enum.EasingStyle.Sine)
+											--effect("HeavyShockwave",cf,Vector3.new(0,0,0),wing1.Primary.Color,Enum.Material.Neon,0,.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(a*.6,0,a*.6);CFrame=cf*cframerandomizer(0,0,-50,50,0,0);Color=wing1.Secondary.Color},1,Enum.EasingStyle.Sine)
+										end
+									end
+								end
+							end
+						end
+						if plr.LastStar.Values.CurrentBaseForm.Value == "APEX" then
+							apexauraval.Value = apexauraval.Value + 6
+							local ray1 = Ray.new((CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(apexauraval.Value),0)*CFrame.new(0,30,15+5*math.cos(sine/30))).Position,Vector3.new(0,-1000,0))
+							local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray1,{workspace.LastStarMouseIgnore,plr},false,true)
+							if raypart then
+								effect("Sphere",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0),Vector3.new(.05,1,.05),wing1.Secondary.Color,Enum.Material.Neon,0,1,Enum.EasingStyle.Quart,Enum.EasingDirection.Out,false,{Size=Vector3.new(4,.05,4)},1,Enum.EasingStyle.Sine)
+							end
+							local ray1 = Ray.new((CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(180+apexauraval.Value),0)*CFrame.new(0,30,15+5*math.cos(sine/30))).Position,Vector3.new(0,-1000,0))
+							local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray1,{workspace.LastStarMouseIgnore,plr},false,true)
+							if raypart then
+								effect("Sphere",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0),Vector3.new(.05,1,.05),wing1.Primary.Color,Enum.Material.Neon,0,1,Enum.EasingStyle.Quart,Enum.EasingDirection.Out,false,{Size=Vector3.new(4,.05,4)},1,Enum.EasingStyle.Sine)
+							end
+							local cf = CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(math.random(0,360)),0)*CFrame.new(0,30,math.random(5,25))
+							local raypart,raypos,normal = ray(cf.Position,Vector3.new(0,-1000,0),{plr,d})
+							if raypart and raypos then
+								local x = wing1.Primary.Color
+								local y = math.random(1,2)
+								if y == 1 then
+									x = wing1.Secondary.Color
+								end
+								effect("Sphere",CFrame.new(raypos)*CFrame.new(0,-1.5,0),Vector3.new(1,1,1),x,Enum.Material.Neon,0,math.random(50,100)/100,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{Size=Vector3.new(.5,.5,.5);CFrame=CFrame.new(raypos)*cframerandomizer(-15,15,0,360,-15,15)*CFrame.new(0,(math.random(30,140)/10),0)},1,Enum.EasingStyle.Sine)
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "REPRESSION" then
+							repressionoffset.Value = repressionoffset.Value - 4
+							local gaming = {0,180}
+							for i,v in pairs(gaming) do
+								local raypart,raypos,normal = ray((CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(repressionoffset.Value+v),0)*CFrame.new(0,10,20)).Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)
+									local raypartY,rayposY = ray(Root.Position,Vector3.new(0,-20,0),{plr,d})
+									if rayposY then
+										local cf2 = CFrame.new(cf.Position,Vector3.new(Root.Position.X,raypos.Y,Root.Position.Z))
+										effect("Sphere",cf2,Vector3.new(3,0,3),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(0,0,0);CFrame=cf2*CFrame.new(0,0,-20)},1,Enum.EasingStyle.Sine)
+									end
+								end
+							end
+							local gaming = {90,270}
+							for i,v in pairs(gaming) do
+								local raypart,raypos,normal = ray((CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(repressionoffset.Value+v),0)*CFrame.new(0,10,20)).Position,Vector3.new(0,-20,0),{plr,d})
+								if raypart then
+									local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)
+									local raypartY,rayposY = ray(Root.Position,Vector3.new(0,-1000,0),{plr,d})
+									if rayposY then
+										local cf2 = CFrame.new(cf.Position,Vector3.new(Root.Position.X,raypos.Y,Root.Position.Z))
+										effect("Sphere",cf2,Vector3.new(3,0,3),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(0,0,0);CFrame=cf2*CFrame.new(0,0,-20)},1,Enum.EasingStyle.Sine)
+									end
+								end
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "EXECUTION" then
+							executionoffset.Value = executionoffset.Value + 3
+							for i = 1,3 do
+								local cf = CFrame.new(Root.Position)*CFrame.Angles(0,math.rad(executionoffset.Value+(120*i)),0)*CFrame.new(0,10,25*math.cos(sine/30))
+								local raypart,raypos,normal = ray(cf.Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(executionoffset.Value+120*i),0)
+									local g = 87.5*math.cos(sine/30)
+									if g < 0 then
+										g = -g
+									end
+									effect("Sphere",cf,Vector3.new(1.5,0,g),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(0,0,g)},1,Enum.EasingStyle.Sine)
+								end
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "ANARCHY" then
+							anarchydelay.Value += 1
+							anarchyoffset.Value += 3
+							if anarchydelay.Value > 15 then
+								anarchydelay.Value = 0
+								local raypart,raypos,normal = ray(Root.Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(anarchyoffset.Value),0)
+									effect("Cube",cf*CFrame.new(-10,0,0),Vector3.new(10,.05,10),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(20,0,40);CFrame=cf*CFrame.new(-20,0,10)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(10,0,0),Vector3.new(10,.05,10),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(20,0,40);CFrame=cf*CFrame.new(20,0,-10)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(0,0,-10),Vector3.new(10,.05,10),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(40,0,20);CFrame=cf*CFrame.new(-10,0,-20)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(0,0,10),Vector3.new(10,.05,10),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(40,0,20);CFrame=cf*CFrame.new(10,0,20)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									
+									effect("Cube",cf*CFrame.new(-10,0,0),Vector3.new(9,.05,9),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(13,0,33);CFrame=cf*CFrame.new(-20,0,10)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(10,0,0),Vector3.new(9,.05,9),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(13,0,33);CFrame=cf*CFrame.new(20,0,-10)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(0,0,-10),Vector3.new(9,.05,9),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(33,0,13);CFrame=cf*CFrame.new(-10,0,-20)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf*CFrame.new(0,0,10),Vector3.new(9,.05,9),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Circular,Enum.EasingDirection.Out,false,{Size=Vector3.new(33,0,13);CFrame=cf*CFrame.new(10,0,20)*CFrame.Angles(0,math.rad(-45),0)},1,Enum.EasingStyle.Sine)
+								end
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "VIRTUE" then
+							if virtuedelay.Value == 2 then
+								virtuedelay.Value = 0
+								local cframe = CFrame.new(Root.Position)*cframerandomizer(0,0,0,360,0,0)*CFrame.new(0,10,math.random(5,40))
+								local raypart,raypos,normal = ray(cframe.Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*cframerandomizer(0,0,0,360,0,0)
+									effect("Cube",cf,Vector3.new(2,0,2),wing1.Primary.Color,Enum.Material.Neon,0,math.random(3,10)/10,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{CFrame=cf*CFrame.new(0,math.random(10,20),0)*cframerandomizer(-50,50,-50,50,-50,50)},1,Enum.EasingStyle.Linear)
+									effect("Cube",cf,Vector3.new(0,.1,0),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(4,0,4)},1,Enum.EasingStyle.Sine)
+									effect("Cube",cf,Vector3.new(0,0,0),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Size=Vector3.new(7,0,7)},1,Enum.EasingStyle.Sine)
+								end
+								local raypart,raypos,normal = ray(Root.Position,Vector3.new(0,-1000,0),{plr,d})
+								if raypart then
+									effect("Sphere",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0),Vector3.new(12+2*math.cos(sine/50),.2,12+2*math.cos(sine/50)),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.In,false,{Size=Vector3.new(0,0,0)},0,Enum.EasingStyle.Linear)
+									effect("Sphere",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0),Vector3.new(8+2*math.cos(sine/50),.6,8+2*math.cos(sine/50)),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.In,false,{Size=Vector3.new(0,0,0)},0,Enum.EasingStyle.Linear)
+								end
+							end
+							virtuedelay.Value = virtuedelay.Value + 1
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "ABSOLUTION" then
+							local g = 1*math.cos(sine/30)
+							if g < 0 then
+								g = -g
+							end
+							local raypart,raypos,normal = ray(Root.Position,Vector3.new(0,-1000,0),{plr,d})
+							if raypart then
+								effect("ThinRing",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0),Vector3.new(0,0,0),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(50*g,g,50*g)},1,Enum.EasingStyle.Linear)
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "INFERNUM" then
+							infernumdelay.Value = infernumdelay.Value + 1
+							local ray = Ray.new((CFrame.new(Root.Position))*CFrame.Angles(0,math.rad(math.random(0,360)),0)*CFrame.new(math.random(5,30),0,0).Position+Vector3.new(0,10,0),Vector3.new(0,-20,0))
+							local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray,{d,plr},false,true)
+							if raypart then
+								local cf = CFrame.new(raypos)*CFrame.new(0,-2,0)
+								local c = {wing1.Primary.Color,wing1.Secondary.Color}
+								effect("Cube",cf*cframerandomizer(0,360,0,360,0,360),Vector3.new(1,1,1),c[math.random(1,2)],Enum.Material.Neon,0,math.random(5,15)/10,Enum.EasingStyle.Linear,Enum.EasingDirection.In,false,{Size=Vector3.new(.05,.05,.05);CFrame=cf*CFrame.new(0,math.random(20,30),0)*cframerandomizer(0,360,0,360,0,360)},1,Enum.EasingStyle.Sine)
+							end
+							if infernumdelay.Value >= 80 then
+								infernumdelay.Value = 0
+								local angle = 0
+								local ray = Ray.new(Root.Position,Vector3.new(0,-1000,0))
+								local raypart,raypos,normal = workspace:FindPartOnRayWithIgnoreList(ray,{d,plr},false,true)
+								for i = 1,40 do
+									if raypart then
+										local cf = CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(angle),0)
+										local offset = cframerandomizer(0,360,0,360,0,360)
+										local s = math.random(20,25)/10
+										effect("Cube",cf*offset,Vector3.new(s,s,s),wing1.Primary.Color,Enum.Material.Neon,0,math.random(10,12)/10,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,false,{Color=wing1.Secondary.Color;Size=Vector3.new(.5,.5,.5);CFrame=cf*CFrame.new(20,0,0)*offset*cframerandomizer(100,100,100,100,100,100)},1,Enum.EasingStyle.Linear)
+
+										angle = angle + 9
+									end
+								end
+							end
+						elseif plr.LastStar.Values.CurrentBaseForm.Value == "HARMONY" then
+							local raypart,raypos,normal = ray(Root.Position,Vector3.new(0,-2000,0),{plr,d})
+							if raypart then
+								harmonyoffset.Value = harmonyoffset.Value + 5
+								effect("LightWind",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(harmonyoffset.Value),0),Vector3.new(0,0,0),wing1.Primary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(200,0,200)},1,Enum.EasingStyle.Sine)
+								effect("LightWind",CFrame.new(raypos,raypos+normal)*CFrame.Angles(math.rad(-90),0,0)*CFrame.Angles(0,math.rad(harmonyoffset.Value+180),0),Vector3.new(0,0,0),wing1.Secondary.Color,Enum.Material.Neon,0,.5,Enum.EasingStyle.Sine,Enum.EasingDirection.Out,false,{Size=Vector3.new(200,0,200)},1,Enum.EasingStyle.Sine)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
