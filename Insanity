@@ -1,0 +1,1319 @@
+-- goodbye normal me
+local cmt = {
+	Angles = function(x,y,z,useRad)
+		if not useRad then
+			return CFrame.Angles(x,y,z)
+		else
+			return CFrame.Angles(math.rad(x),math.rad(y),math.rad(z))
+		end
+	end
+}
+local imt = {
+	CreateWeld = function(p1,p2,c0,c1)
+		c0,c1 = c0 or CFrame.new(0,0,0),c1 or CFrame.new(0,0,0)
+		local weld = Instance.new("Motor6D",p2)
+		weld.Part0,weld.Part1 = p1,p2
+		weld.C0,weld.C1 = c0,c1
+		return weld
+	end,
+	New = function(type,args)
+		local instance = Instance.new(type)
+		for i,v in pairs(args) do
+			pcall(function()
+				instance[i] = v
+			end)
+		end
+		return instance
+	end,
+	Remove = function(instance,time)
+		time = time or 0
+		game:GetService("Debris"):AddItem(instance,time)
+	end
+}
+local math = setmetatable({random = function(minNum,maxNum,div) div = div or 1 return math.random(minNum * div,maxNum * div)/div end},{__index = math,__newindex = function(s,k,v) s[k] = v end})
+local CFrame = setmetatable(cmt,{__index = CFrame,__newindex = function(s,k,v) s[k] = v end})
+local Instance = setmetatable(imt,{__index = Instance,__newindex = function(s,k,v) s[k] = v end})
+
+local Player = game:GetService("Players")[script.Parent.Parent.Name]
+local Mouse,mouse,UserInputService,ContextActionService
+do
+	local CAS = {Actions={}}
+	local Event = Instance.new("RemoteEvent")
+	Event.Name = "UserInputEvent"
+	Event.Parent = Player.Character
+	local fakeEvent = function()
+		local t = {_fakeEvent=true}
+		t.Connect = function(self,f)self.Function=f end
+		t.connect = t.Connect
+		return t
+	end
+    local m = {Target=nil,Hit=CFrame.new(),KeyUp=fakeEvent(),KeyDown=fakeEvent(),Button1Up=fakeEvent(),Button1Down=fakeEvent()}
+	local UIS = {InputBegan=fakeEvent(),InputEnded=fakeEvent()}
+	function CAS:BindAction(name,fun,touch,...)
+		CAS.Actions[name] = {Name=name,Function=fun,Keys={...}}
+	end
+	function CAS:UnbindAction(name)
+		CAS.Actions[name] = nil
+	end
+	local function te(self,ev,...)
+		local t = m[ev]
+		if t and t._fakeEvent and t.Function then
+			t.Function(...)
+		end
+	end
+	m.TrigEvent = te
+	UIS.TrigEvent = te
+	Event.OnServerEvent:Connect(function(plr,io)
+	    if plr~=Player then return end
+		if io.isMouse then
+			m.Target = io.Target
+			m.Hit = io.Hit
+		elseif io.UserInputType == Enum.UserInputType.MouseButton1 then
+	        if io.UserInputState == Enum.UserInputState.Begin then
+				m:TrigEvent("Button1Down")
+			else
+				m:TrigEvent("Button1Up")
+			end
+		else
+			for n,t in pairs(CAS.Actions) do
+				for _,k in pairs(t.Keys) do
+					if k==io.KeyCode then
+						t.Function(t.Name,io.UserInputState,io)
+					end
+				end
+			end
+	        if io.UserInputState == Enum.UserInputState.Begin then
+	            m:TrigEvent("KeyDown",io.KeyCode.Name:lower())
+				UIS:TrigEvent("InputBegan",io,false)
+			else
+				m:TrigEvent("KeyUp",io.KeyCode.Name:lower())
+				UIS:TrigEvent("InputEnded",io,false)
+	        end
+	    end
+	end)
+	Mouse,mouse,UserInputService,ContextActionService = m,m,UIS,CAS
+end
+
+--BasicFunctions
+local ins = Instance.new
+local v3 = Vector3.new
+local cf = CFrame.new
+local angles = CFrame.Angles
+local rad = math.rad
+local huge = math.huge
+local cos = math.cos
+local sin = math.sin
+local tan = math.tan
+local abs = math.abs
+local ray = Ray.new
+local random = math.random
+local ud = UDim.new
+local ud2 = UDim2.new
+local c3 = Color3.new
+local rgb = Color3.fromRGB
+local bc = BrickColor.new
+
+--Services
+local plrs = game:GetService("Players")
+local tweens = game:GetService("TweenService")
+local debrs = game:GetService("Debris")
+local runservice = game:GetService("RunService")
+ 
+--Variables
+local plr = Player
+local plrg = plr.PlayerGui
+local char = plr.Character
+local h = char.Head
+local t = char.Torso
+local ra = char["Right Arm"]
+local la = char["Left Arm"]
+local rl = char["Right Leg"]
+local ll = char["Left Leg"]
+local rut = char.HumanoidRootPart
+local hum = char:FindFirstChildOfClass("Humanoid")
+local nec = t.Neck
+local rutj = rut.RootJoint
+local rs = t["Right Shoulder"]
+local ls = t["Left Shoulder"]
+local rh = t["Right Hip"]
+local lh = t["Left Hip"]
+
+necc0,necc1=cf(0,t.Size.Y/2,0),cf(0,-h.Size.Y/2,0)
+rutjc0,rutjc1=cf(0,0,0),cf(0,0,0)
+rsc0,rsc1=cf(t.Size.X/2,t.Size.Y/4,0),cf(-ra.Size.X/2,ra.Size.Y/4,0)
+lsc0,lsc1=cf(-t.Size.X/2,t.Size.Y/4,0),cf(la.Size.X/2,la.Size.Y/4,0)
+rhc0,rhc1=cf(t.Size.X/4,-t.Size.Y/2,0),cf(0,rl.Size.Y/2,0)
+lhc0,lhc1=cf(-t.Size.X/4,-t.Size.Y/2,0),cf(0,ll.Size.Y/2,0)
+
+local muted = false
+local using = false
+
+script.Client.Disabled = false
+local anim = "idle"
+local asset = "rbxassetid://"
+
+local idle2State = 0
+local idle2Progress = 0
+local idle2Goal = 750
+local idle2SubCount = 0
+
+local change = 1
+local sine = 0
+
+local ws = 4
+local jp = 0
+
+local timePos = 0
+
+local headShakeRarity = 20
+local bodyShakeRarity = 100
+
+--
+local stepsounds = {
+Grass = asset.."1201103066",
+Sand = asset.."1436385526",
+Plastic = asset.."1569994049",
+Stone = asset.."507863857", --379398649
+Wood = asset.."1201103959",
+Pebble = asset.."1201103211",
+Ice = asset.."265653271",
+Glass = asset.."145180170",
+Metal = asset.."379482691"
+}
+
+local directions = {In = Enum.EasingDirection.In,
+    Out = Enum.EasingDirection.Out,
+    InOut = Enum.EasingDirection.InOut
+}
+
+local styles = {Linear = Enum.EasingStyle.Linear,
+    Back = Enum.EasingStyle.Back,
+    Bounce = Enum.EasingStyle.Bounce,
+    Sine = Enum.EasingStyle.Sine,
+    Quad = Enum.EasingStyle.Quad,
+    Elastic = Enum.EasingStyle.Elastic,
+    Quart = Enum.EasingStyle.Quart,
+    Quint = Enum.EasingStyle.Quint
+}
+
+local ragdollJoints = {
+	["R6"] = {
+		["Neck"] = {
+			["Att0Rotation"] = v3(0,-90,90),
+			["Att1Rotation"] = v3(0,-90,90),
+			["Position0"] = v3(0,.5,0),
+			["Position1"] = v3(0,-.5,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 90,
+				TwistLowerAngle = -90,
+				TwistUpperAngle = 90
+			}
+		},
+		["Right Shoulder"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,-90),
+			["Position0"] = v3(.5,.333,0),
+			["Position1"] = v3(-.5,.333,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 165,
+				TwistLowerAngle = -135,
+				TwistUpperAngle = 135
+			}
+		},
+		["Left Shoulder"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,90),
+			["Position0"] = v3(-.5,.333,0),
+			["Position1"] = v3(.5,.333,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 165,
+				TwistLowerAngle = -135,
+				TwistUpperAngle = 135
+			}
+		},
+		["Right Hip"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["Position0"] = v3(.25,-.5,0),
+			["Position1"] = v3(0,.5,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 100,
+				TwistLowerAngle = -45,
+				TwistUpperAngle = 45
+			}
+		},
+		["Left Hip"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["Position0"] = v3(-.25,-.5,0),
+			["Position1"] = v3(0,.5,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 100,
+				TwistLowerAngle = -45,
+				TwistUpperAngle = 45
+			}
+		}
+	},
+	["R15"] = {
+		["Neck"] = {
+			["Att0Rotation"] = v3(0,-90,90),
+			["Att1Rotation"] = v3(0,-90,90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 80,
+				TwistLowerAngle = -75,
+				TwistUpperAngle = 75
+			}
+		},
+		["Waist"] = {
+			["Att0Rotation"] = v3(0,-90,90),
+			["Att1Rotation"] = v3(0,-90,90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 25,
+				TwistLowerAngle = -30,
+				TwistUpperAngle = 30
+			}
+		},
+		["RightShoulder"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 105,
+				TwistLowerAngle = -115,
+				TwistUpperAngle = 115
+			}
+		},
+		["LeftShoulder"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 105,
+				TwistLowerAngle = -115,
+				TwistUpperAngle = 115
+			}
+		},
+		["RightHip"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 80,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		},
+		["LeftHip"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 80,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		},
+		["RightElbow"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 0,
+				TwistLowerAngle = 105,
+				TwistUpperAngle = 0
+			}
+		},
+		["LeftElbow"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 0,
+				TwistLowerAngle = 105,
+				TwistUpperAngle = 0
+			}
+		},
+		["RightKnee"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 0,
+				TwistLowerAngle = 0,
+				TwistUpperAngle = -105
+			}
+		},
+		["LeftKnee"] = {
+			["Att0Rotation"] = v3(0,0,0),
+			["Att1Rotation"] = v3(0,0,0),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 0,
+				TwistLowerAngle = 0,
+				TwistUpperAngle = -105
+			}
+		},
+		["RightWrist"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 10,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		},
+		["LeftWrist"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 10,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		},
+		["RightAnkle"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 10,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		},
+		["LeftAnkle"] = {
+			["Att0Rotation"] = v3(0,-90,-90),
+			["Att1Rotation"] = v3(0,-90,-90),
+			["BallSocketProps"] = {
+				LimitsEnabled = true,
+				TwistLimitsEnabled = true,
+				UpperAngle = 10,
+				TwistLowerAngle = -35,
+				TwistUpperAngle = 35
+			}
+		}
+	}
+}
+
+local hits = {
+	2974875234,
+	2974875851,
+	2974876428
+}
+
+local stepped = runservice.Heartbeat
+local ignoreList = {char}
+
+--Removing joints/Animations
+if char:FindFirstChild("Animate") then
+	char.Animate:Destroy()
+end
+
+if hum:FindFirstChildOfClass("Animator") then
+	char.Humanoid.Animator:Destroy()
+end
+
+nec.Parent = nil
+rutj.Parent = nil
+rs.Parent = nil
+ls.Parent = nil
+rh.Parent = nil
+lh.Parent = nil
+
+--Joints
+local nec = ins("Motor6D",t) nec.Name = "Neck" nec.Part0 = t nec.Part1 = h
+local rutj = ins("Motor6D",rut) rutj.Name = "RootJoint" rutj.Part0 = t rutj.Part1 = rut
+local rs = ins("Motor6D",t) rs.Name = "Right Shoulder" rs.Part0 = t rs.Part1 = ra
+local ls = ins("Motor6D",t) ls.Name = "Left Shoulder" ls.Part0 = t ls.Part1 = la
+local rh = ins("Motor6D",t) rh.Name = "Right Hip" rh.Part0 = t rh.Part1 = rl
+local lh = ins("Motor6D",t) lh.Name = "Left Hip" lh.Part0 = t lh.Part1 = ll
+
+--Setting CFrames
+nec.C1 = necc1
+nec.C0 = necc0
+rs.C1 = rsc1
+rs.C0 = rsc0
+ls.C1 = lsc1
+ls.C0 = lsc0
+rh.C1 = rhc1
+rh.C0 = rhc0
+lh.C1 = lhc1
+lh.C0 = lhc0
+rutj.C1 = rutjc1
+rutj.C0 = rutjc0
+--Adds
+local theme = Instance.New("Sound",{Volume = .75,Looped = true,SoundId = "rbxassetid://3276535626",Parent = t})
+theme:Play()
+local ff = ins("ForceField",char)
+ff.Visible = false
+
+local effects = ins("Model",char)
+effects.Name = "Effects"
+
+local shaker = script.DistShaker:Clone()
+
+local EffectsModule = require(script.EffectsM)
+EffectsModule:SetParent()
+
+for i,v in pairs(char:GetDescendants()) do if v:IsA("Decal") then Instance.Remove(v) end end
+local face = Instance.New("Decal",{Texture = "rbxassetid://120463437",Parent = h})
+
+--Functions
+
+function swait()
+	game:GetService("RunService").Stepped:Wait()
+end
+
+function rayc(spos,direc,ignore,dist)
+    local rai = ray(spos,direc.Unit * dist)
+    local rhit,rpos,rrot = workspace:FindPartOnRayWithIgnoreList(rai,ignore,false,false)
+    return rhit,rpos,rrot
+end
+
+function sound(id,vol,pitch,parent,maxdist)
+	local mdist = 30 or maxdist
+	local newsound = Instance.new("Sound",parent)
+	newsound.Volume = vol
+	newsound.SoundId = "rbxassetid://"..id
+	newsound.Pitch = pitch
+	newsound:Play()
+	coroutine.resume(coroutine.create(function()
+		wait(1)
+		Instance.Remove(newsound,newsound.TimeLength/newsound.Pitch)
+	end))
+	return newsound
+end
+
+function placesoundpart(rcf,id,vol,pitch,maxdist)
+	pcall(function()
+		local mdist = 30 or maxdist
+		local spart = ins("Part",effects)
+		spart.Anchored = true
+		spart.CanCollide = false
+		spart.Locked = true
+		spart.Transparency = 1
+		spart.CFrame = rcf
+		local ssound = sound(id,vol,pitch,spart,mdist)
+		Instance.Remove(spart,ssound.TimeLength/ssound.Pitch)
+	end)
+end
+
+local tlerp = function(part,tablee,leinght,easingstyle,easingdirec)
+	local info = TweenInfo.new(
+		leinght,
+		easingstyle,
+		easingdirec,
+		0,
+		false,
+		0
+	)
+	local tween = tweens:Create(part,info,tablee)
+	tween:Play()
+end
+function tween(instance,args,info,playOnCreate)
+	if instance and args then
+		playOnCreate = playOnCreate or true
+		info = info or TweenInfo.new(
+			1,
+			Enum.EasingStyle.Linear,
+			Enum.EasingDirection.In,
+			0,
+			false,
+			0
+		)
+		if typeof(info) == "table" then
+			info = TweenInfo.new(unpack(info))
+		end
+		local tween = game:GetService("TweenService"):Create(instance,info,args)
+		if playOnCreate then
+			tween:Play()
+		end
+		return tween
+	end
+end
+
+local Effects = {
+	Ring = function(pos,color,sSize,eSize,sTrans,eTrans,time)
+		local ring = script.Ring:Clone()
+		ring.Size = sSize
+		ring.Transparency = sTrans
+		ring.CFrame = pos
+		ring.Color = color
+		ring.Parent = effects
+		Instance.Remove(ring,time)
+		tlerp(ring,{Size = eSize,Transparency = eTrans},time,styles.Linear,directions.Out)
+	end,
+	SpinningRing = function(pos,color,rotation,sSize,eSize,sTrans,eTrans,time)
+		local ring = script.Ring:Clone()
+		ring.Size = sSize
+		ring.Transparency = sTrans
+		ring.CFrame = pos
+		ring.Color = color
+		ring.Parent = effects
+		Instance.Remove(ring,time)
+		tlerp(ring,{Size = eSize,Transparency = eTrans},time,styles.Linear,directions.Out)
+		coroutine.wrap(function()
+			repeat
+				ring.CFrame = ring.CFrame * rotation
+				wait(1/30)
+			until not ring.Parent
+		end)()
+	end,
+	Sphere = function(pos,color,sSize,eSize,sTrans,eTrans,time)
+		local sphere = ins("Part")
+		sphere.Shape = "Ball"
+		sphere.Size = v3(sSize,sSize,sSize)
+		sphere.Transparency = sTrans
+		sphere.CFrame = pos
+		sphere.Color = color
+		sphere.Parent = effects
+		sphere.Anchored = true
+		sphere.CanCollide = false
+		sphere.Locked = true
+		sphere.Material = "Neon"
+		Instance.Remove(sphere,time)
+		tlerp(sphere,{Size = v3(eSize,eSize,eSize),Transparency = eTrans},time,styles.Linear,directions.Out)
+	end,
+	SpinningBlock = function(pos,color,sSize,eSize,sTrans,eTrans,cfRotation,time)
+		local part = ins("Part")
+		part.Size = v3(sSize,sSize,sSize)
+		part.Transparency = sTrans
+		part.CFrame = pos
+		part.Color = color
+		part.Parent = effects
+		part.Anchored = true
+		part.CanCollide = false
+		part.Locked = true
+		part.Material = "Neon"
+		Instance.Remove(part,time)
+		tlerp(part,{Size = v3(eSize,eSize,eSize),Transparency = eTrans},time,styles.Linear,directions.Out)
+		coroutine.wrap(function()
+			repeat
+				part.CFrame = part.CFrame * cfRotation
+				wait(1/30)
+			until not part.Parent
+		end)()
+	end,
+	CustomSphere = function(pos,endPos,color,sSize,eSize,sTrans,eTrans,time)
+		local sphere = ins("Part")
+		sphere.Size = sSize
+		sphere.Transparency = sTrans
+		sphere.CFrame = pos
+		sphere.Color = color
+		sphere.Parent = effects
+		sphere.Anchored = true
+		sphere.CanCollide = false
+		sphere.Locked = true
+		sphere.Material = "Neon"
+		
+		local mesh = ins("SpecialMesh",sphere)
+		mesh.MeshType = "Sphere"
+		
+		Instance.Remove(sphere,time)
+		tlerp(sphere,{Size = eSize,Transparency = eTrans,CFrame = endPos},time,styles.Linear,directions.Out)
+	end,
+	Wind = function(pos,color,rotation,sSize,eSize,sTrans,eTrans,time)
+		local ring = script.Wind:Clone()
+		ring.Size = sSize
+		ring.Transparency = sTrans
+		ring.CFrame = pos
+		ring.Color = color
+		ring.Parent = effects
+		Instance.Remove(ring,time)
+		tlerp(ring,{Size = eSize,Transparency = eTrans},time,styles.Linear,directions.Out)
+		coroutine.wrap(function()
+			repeat
+				ring.CFrame = ring.CFrame * angles(rad(0),rad(rotation),rad(0))
+				wait(1/30)
+			until not ring.Parent
+		end)()
+	end,
+	CreateCamShake = function(part,maxDist,intensivity,time)
+		maxDist = maxDist or 20
+		intensivity = intensivity or 1
+		time = time or .1
+		
+		local bool = ins("BoolValue",part)
+		bool.Name = "Shaking"
+		bool.Value = true
+		
+		local MaxDist = ins("NumberValue",bool)
+		MaxDist.Name = "MaxDist"
+		MaxDist.Value = maxDist
+		
+		local Intensivity = ins("NumberValue",bool)
+		Intensivity.Name = "Intensivity"
+		Intensivity.Value = intensivity
+		
+		Instance.Remove(bool,time)
+	end,
+	SoundEffect = function(sound,effect)
+		ins(effect.."SoundEffect",sound)
+	end,
+	Particles = function(part,type,dis)
+		local parts
+		if type:lower() == "blood" then
+			parts = script.Effects.BloodParticles:Clone()
+			parts.Parent = part
+			if dis then
+				parts.Enabled = false
+			else
+				parts.Enabled = true
+			end
+		elseif type:lower() == "bloodsplash" then
+			parts = script.Effects.BloodSplash:Clone()
+			parts.Parent = part
+			if dis then
+				parts.Enabled = false
+			else
+				parts.Enabled = true
+			end
+		end
+		return parts
+	end
+}
+
+function blood(pos,direc,forcev,scale,ignore)
+	ignore = ignore or ins("Model")
+	scale = scale or 1
+	forcev = forcev or 25
+	if not pos then
+		return warn("No position set")
+	end
+	local p = ins("Part")
+	p.Size = v3(.35,.35,.35) * scale
+	p.CanCollide = true
+	p.Transparency = 1
+	p.Material = "Neon"
+	p.Shape = "Ball"
+	p.CFrame = pos
+	p.Parent = effects
+	p:BreakJoints()
+	
+	table.insert(ignoreList,p)
+	
+	local bps = Effects.Particles(p,"blood",false)
+	bps.Size = NumberSequence.new(.2 * scale)
+	bps:Emit(7)
+	
+	local force = ins("BodyVelocity",p)
+	force.MaxForce = v3(huge,huge,huge)
+	force.Velocity = (direc + v3(random(-.75,.75,100),random(-.75,.75,100),random(-.75,.75,100))) * forcev
+	
+	Instance.Remove(force,.15)
+	
+	local raySides = {
+		v3(0,100,0),
+		v3(0,-100,0),
+		v3(0,0,100),
+		v3(0,0,-100),
+		v3(100,0,0),
+		v3(-100,0,0),
+		v3(100,100,0),
+		v3(-100,100,0),
+		v3(100,-100,0),
+		v3(-100,-100,0),
+		v3(0,100,100),
+		v3(0,100,-100),
+		v3(0,-100,100),
+		v3(0,-100,-100),
+		v3(100,100,100),
+		v3(100,-100,100),
+		v3(100,100,-100),
+		v3(100,-100,-100),
+		v3(-100,100,100),
+		v3(-100,-100,100),
+		v3(-100,100,-100),
+		v3(-100,-100,-100),
+		v3(100,100,-100),
+		v3(-100,-100,100),
+		v3(-100,100,-100),
+		v3(100,-100,100)
+	}
+	local deb = false
+	p.Touched:Connect(function(hit)
+		if hit:IsDescendantOf(char) or hit:IsDescendantOf(ignore) or deb then return end
+		deb = true
+		bps.Enabled = false
+		p.CanCollide = false
+		p.Anchored = true
+		local pPos = p.Position
+		Instance.Remove(p,2.5)
+		
+		local decSize = 3 * scale
+		local reg = Region3.new(pPos - v3(decSize/2,decSize/2,decSize/2),pPos + v3(decSize/2,decSize/2,decSize/2))
+		local foundParts = workspace:FindPartsInRegion3WithWhiteList(reg,ignoreList,100)
+		
+		local breakAfter = false
+		
+		for i,v in pairs(foundParts) do
+			if v.Name == "BloodPuddle_v2" then
+				local add = random(10,25)/100
+				v.Size = v.Size + v3(add,0,add) * scale
+				local pars = Effects.Particles(v,"blood",true)
+				pars.LockedToPart = false
+				pars.Size = NumberSequence.new(.2 * scale)
+				pars.Speed = NumberRange.new(5)
+				pars.Acceleration = v3(0,-10,0) * scale
+				pars.SpreadAngle = Vector2.new(50,50) * scale
+				pars.Lifetime = NumberRange.new(.2,.5)
+				pars:Emit(3)
+				breakAfter = true
+			end
+		end
+		
+		if breakAfter then
+			return
+		end
+		
+		for i,v in pairs(raySides) do
+			local hitt,ppos,nId = rayc(pPos,(pPos + v) - pPos,ignoreList,5 * scale)
+			if hitt then
+				
+				local decSize = 3 * scale
+				local reg = Region3.new(pPos - v3(decSize/2,decSize/2,decSize/2),pPos + v3(decSize/2,decSize/2,decSize/2))
+				local foundParts = workspace:FindPartsInRegion3WithWhiteList(reg,ignoreList,100)
+				
+				local breakAfter = false
+				
+				for i,v in pairs(foundParts) do
+					if v.Name == "BloodPuddle_v2" then
+						local add = random(10,25)/100
+						v.Size = v.Size + v3(add,0,add) * scale
+						local pars = Effects.Particles(v,"blood",true)
+						pars.LockedToPart = false
+						pars.Size = NumberSequence.new(.2 * scale)
+						pars.Speed = NumberRange.new(5 * scale)
+						pars.Acceleration = v3(0,-10,0) * scale
+						pars.SpreadAngle = Vector2.new(50,50) * scale
+						pars.Lifetime = NumberRange.new(.2,.5)
+						pars:Emit(3)
+						breakAfter = true
+					end
+				end
+				
+				if breakAfter then
+					return
+				end
+				
+				local size = random(75,125)/100
+				local puddle = ins("Part")
+				puddle.CanCollide = false
+				puddle.Anchored = true
+				puddle.Material = "SmoothPlastic"
+				puddle.Color = bc("Maroon").Color
+				puddle.Size = v3(size,.05,size) * scale
+				puddle.CFrame = cf(ppos,ppos+nId) * angles(rad(-90),rad(0),rad(0))
+				puddle.Name = "BloodPuddle_v2"
+				puddle.Parent = effects
+				
+				if not hitt.Anchored then
+					puddle.Anchored = false
+					local we = ins("WeldConstraint",puddle)
+					we.Part0 = hitt
+					we.Part1 = puddle
+				end
+				
+				ins("CylinderMesh",puddle)
+				
+				sound(685857471,.025 * scale,random(.9,1.1,100),puddle,.01)
+				
+				local pars = Effects.Particles(puddle,"blood",true)
+				pars.LockedToPart = false
+				pars.Size = NumberSequence.new(.2 * scale)
+				pars.Speed = NumberRange.new(5 * scale)
+				pars.Acceleration = v3(0,-10,0) * scale
+				pars.SpreadAngle = Vector2.new(50,50) * scale
+				pars.Lifetime = NumberRange.new(.2,.5)
+				pars:Emit(20)
+				
+				coroutine.wrap(function()
+					wait(random(450,900)/100)
+					Instance.Remove(puddle,2)
+					tlerp(puddle,{Transparency = 1},2,styles.Quad,directions.In)
+				end)()
+				
+				break
+			end
+		end
+	end)
+end
+
+function kill(who,kill_)
+	if who and not who:FindFirstChild("urdedxdxdxddxdxdxxddxd") then
+		if kill_ then
+			Instance.New("StringValue",{Name = "urdedxdxdxddxdxdxxddxd",Parent = who})
+		else
+			Instance.New("StringValue",{Name = "urstunnddxdxdxddxdxdxxddxd",Parent = who})
+		end
+		local head
+		local human = who:FindFirstChildOfClass("Humanoid")
+		if human then
+			human.PlatformStand = true
+		end
+		if kill_ then
+			for i,v in pairs(who:GetDescendants()) do
+				if v.Name == "RagdollHB" then
+					Instance.Remove(v)
+				end
+			end
+		end
+		for i,v in pairs(who:GetDescendants()) do
+			if v:IsA("Motor6D") or v:IsA("Motor6D") then
+				for _,r in pairs(ragdollJoints) do
+					for w,j in pairs(r) do
+						if v.Name == w then
+							local att0 = Instance.New("Attachment",{Position = v.C0.Position,Orientation = j["Att0Rotation"],Parent = v.Part0})
+							local att1 = Instance.New("Attachment",{Position = v.C1.Position,Orientation = j["Att1Rotation"],Parent = v.Part1})
+							if j["Position0"] then
+								att0.Position = v.Part0.Size * j["Position0"]
+							end
+							if j["Position1"] then
+								att1.Position = v.Part1.Size * j["Position1"]
+								if not kill_ then
+									local p = Instance.New("Part",{Name = "RagdollHB",Locked = true,Massless = true,Anchored = false,CanCollide = true,Transparency = 1,Size = v.Part1.Size * v3(.75,.75,.75),Parent = v.Part1})
+									local w = Instance.CreateWeld(v.Part1,p)
+									if string.find(v.Part1.Name,"Arm") or string.find(v.Part1.Name,"Leg") then
+										w.C0 = cf(0,(-v.Part1.Size.Y/2) + p.Size.Y/2,0)
+									end
+								end
+							else
+								if not kill_ then
+									local p = Instance.New("Part",{Name = "RagdollHB",Locked = true,Massless = true,Anchored = false,CanCollide = true,Transparency = 1,Size = v.Part1.Size * v3(.5,.3,.5),Parent = v.Part1})
+									local w = Instance.CreateWeld(v.Part1,p)
+								elseif v.Part1.Name == "Head" then
+									local p = Instance.New("Part",{Name = "RagdollHB",Locked = true,Massless = true,Anchored = false,CanCollide = true,Transparency = 1,Size = v.Part1.Size * v3(.5,.3,.5),Parent = v.Part1})
+									local w = Instance.CreateWeld(v.Part1,p)
+								end
+							end
+							Instance.New("NoCollisionConstraint",{Part0 = v.Part0,Part1 = v.Part1,Parent = v.Part0})
+							local socket = Instance.New("BallSocketConstraint",{Attachment0 = att0,Attachment1 = att1,Name = w,Parent = att0})
+							for i,v in pairs(j["BallSocketProps"]) do
+								socket[i] = v
+							end
+							Instance.Remove(v)
+						end
+					end
+				end
+			elseif v.Name == "HumanoidRootPart" then
+				Instance.Remove(v)
+			end
+			if v:IsA("BasePart") and v.Name ~= "RagdollHB" then
+				v.Anchored = false
+				v.TopSurface,v.BottomSurface = 10,10
+				v.CanCollide = false
+				if kill_ then
+					tween(v,{Transparency = 1},{1.5,styles.Quint,directions.Out,0,false,5})
+					Instance.Remove(v,6.5)
+				end
+				if v.Name == "Head" then
+					head = v
+				end
+			elseif v:IsA("Decal") then
+				if kill_ then
+					tween(v,{Transparency = 1},{1.5,styles.Quint,directions.Out,0,false,5})
+					Instance.Remove(v,6.5)
+				end
+			end
+		end
+		if kill_ then
+			Instance.Remove(who,10)
+		end
+		if human then
+			if kill_ then
+				human.BreakJointsOnDeath = false
+				human.Health = 0
+			end
+			human.PlatformStand = true
+		end
+		return head
+	end
+end
+
+function findCharacter(pos,size,Break)
+	if string.lower(typeof(pos)) == "instance" then
+		pos = pos.Position
+	elseif string.lower(typeof(pos)) == "cframe" then
+		pos = pos.Position
+	end
+	if string.lower(type(size)) == "number" then
+		size = v3(size,size,size)
+	end
+	local chars = {}
+	for i,v in pairs(workspace:FindPartsInRegion3WithIgnoreList(Region3.new(pos - size/2,pos + size/2),ignoreList,100)) do
+		local humm = v.Parent:FindFirstChildOfClass("Humanoid")
+		if humm and not humm.Parent:FindFirstChild("urdedxdxdxddxdxdxxddxd") and not humm:FindFirstChild("urstunnddxdxdxddxdxdxxddxd") then
+			if Break then
+				chars["Humanoid"] = humm
+				chars["Character"] = humm.Parent
+				return chars
+			else
+				table.insert(chars,{["Humanoid"] = humm,["Character"] = humm.Parent})
+			end
+		end
+	end
+	if #chars == 0 then chars = nil end
+	return chars
+end
+
+function laugh()
+	using = true
+	ws = 0
+	local l = sound(184605339,1.25,random(.95,1.05,100),t,3.5)
+	l.TimePosition = 13
+	local sineDiv = 4.25
+	repeat
+		if l.TimePosition > 19 then
+			break
+		end
+		nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(cos(sine/sineDiv) * sin(sine/sineDiv) * 15,0,0,true) * angles(20,0,0,true),.2)
+		rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 2.5,0,0,true) * cf(0,.275,-.125) * angles(-7.5,0,0,true),.2)
+		rs.C0 = rs.C0:Lerp(rsc0 * cf(0,.2 * -sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(-sin(sine/sineDiv) * -cos(sine/sineDiv) * 3,0,-sin(sine/sineDiv) * cos(sine/sineDiv) * 5,true) * cf(-.05,-.1,.05) * angles(-8,-20,2.5,true),.2)
+		ls.C0 = ls.C0:Lerp(lsc0 * cf(0,.2 * -sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(-sin(sine/sineDiv) * -cos(sine/sineDiv) * 3,0,-sin(sine/sineDiv) * cos(sine/sineDiv) * -5,true) * cf(.05,-.1,.05) * angles(-8,20,-2.5,true),.2)
+		rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 3.1,0,0,true) * cf(0,.25,-.15) * angles(-7.5,-12.5,7.5,true),.2)
+		lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 3.1,0,0,true) * cf(0,.25,-.25) * angles(-12,5,-5,true),.2)
+		swait()
+	until not l.Playing or not l.Parent or not l
+	ws = 4
+	using = false
+end
+
+function attack1()
+	using = true
+	tween(nec,{C0 = necc0 * cf(0,0,0) * angles(5,-40,0,true)},{.3,styles.Quad,directions.InOut,0,false,0})
+	tween(rutj,{C0 = rutjc0 * cf(0,.25,.1) * angles(-5,-40,0,true)},{.125,styles.Quad,directions.InOut,0,false,0})
+	tween(rs,{C0 = rsc0 * cf(-.1,0,-.35) * angles(90,10,35,true)},{.125,styles.Quad,directions.InOut,0,false,0})
+	tween(ls,{C0 = lsc0 * cf(.1,-.1,.1) * angles(-7.5,10,-5,true)},{.225,styles.Quad,directions.InOut,0,false,0})
+	tween(rh,{C0 = rhc0 * cf(0,.2,-.05) * angles(-15,-12.5,7.5,true)},{.125,styles.Quad,directions.InOut,0,false,0})
+	wait(.1)
+	local ch = findCharacter(rut.CFrame * cf(0,0,-1).Position,v3(4,5,4),true)
+	if ch then
+		local ch,hu = ch["Character"],ch["Humanoid"]
+		local to = ch:FindFirstChild("Torso") or ch:FindFirstChild("UpperTorso")
+		if to then
+			table.insert(ignoreList,ch)
+			hu.PlatformStand = true
+			ws = 0
+			rut.CFrame = cf(rut.Position,v3(to.Position.X,rut.Position.Y,to.Position.Z))
+			local w = Instance.CreateWeld(rut,to,rut.CFrame:toObjectSpace(to.CFrame))
+			tween(w,{C0 = cf(0,0,-1.25) * angles(0,180,0,true)},{.2,styles.Quad,directions.InOut,0,false,0})
+			tween(nec,{C0 = necc0 * cf(0,0,0) * angles(2.5,15,15,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(rutj,{C0 = rutjc0 * cf(0,.15,0) * angles(5,15,0,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(rs,{C0 = rsc0 * cf(-.25,-.125,-.4) * angles(85,0,-35,true) * angles(0,20,0,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(ls,{C0 = lsc0 * cf(.3,-.15,-.65) * angles(60,0,30,true) * angles(20,20,0,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(rh,{C0 = rhc0 * cf(0,.15,-.125) * angles(5,-5,2.5,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(lh,{C0 = lhc0 * cf(0,.15,-.15) * angles(-1,5,-2.5,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			wait(.15)
+			tween(nec,{C0 = necc0 * cf(0,0,0) * angles(-2.5,15,0,true)},{.35,styles.Sine,directions.InOut,0,false,0})
+			tween(rutj,{C0 = rutjc0 * cf(0,.15,-.1) * angles(-5,15,0,true)},{.25,styles.Sine,directions.InOut,0,false,0})
+			tween(rs,{C0 = rsc0 * cf(-.25,-.125,-.45) * angles(85,0,-30,true) * angles(0,20,0,true)},{.25,styles.Sine,directions.InOut,0,false,0})
+			tween(ls,{C0 = lsc0 * cf(.3,-.15,-.7) * angles(60,0,20,true) * angles(20,20,0,true)},{.25,styles.Sine,directions.InOut,0,false,0})
+			tween(rh,{C0 = rhc0 * cf(0,.15,-.15) * angles(-2.5,-5,2.5,true)},{.25,styles.Sine,directions.InOut,0,false,0})
+			tween(lh,{C0 = lhc0 * cf(0,.15,-.175) * angles(-6,5,-2.5,true)},{.25,styles.Sine,directions.InOut,0,false,0})
+			wait(.2)
+			local he = kill(ch,false)
+			tween(w,{C0 = cf(0,.15,-1.1) * angles(-5,180,0,true)},{.15,styles.Quad,directions.InOut,0,false,0})
+			tween(nec,{C0 = necc0 * cf(0,0,0) * angles(2.5,5,35,true)},{.2,styles.Back,directions.Out,0,false,0})
+			tween(rutj,{C0 = rutjc0 * cf(0,.15,.1) * angles(7.5,5,0,true)},{.15,styles.Quart,directions.Out,0,false,0})
+			tween(rs,{C0 = rsc0 * cf(-.35,-.2,-.3) * angles(85,0,-55,true) * angles(0,20,0,true)},{.3,styles.Quart,directions.Out,0,false,0})
+			tween(ls,{C0 = lsc0 * cf(.4,-.25,-.4) * angles(60,0,50,true) * angles(20,20,0,true)},{.3,styles.Quart,directions.Out,0,false,0})
+			tween(rh,{C0 = rhc0 * cf(0,.15,-.125) * angles(7.5,-5,2.5,true)},{.15,styles.Quart,directions.Out,0,false,0})
+			tween(lh,{C0 = lhc0 * cf(0,.15,-.15) * angles(1,5,-2.5,true)},{.15,styles.Quart,directions.Out,0,false,0})
+			wait(.1)
+			sound(2801263,.1,random(.9,1.1,100),he,.5)
+			sound(418658161,.1,random(.6,.8,100),he,.5).TimePosition = 3
+			wait(.2)
+			Instance.Remove(w)
+			coroutine.wrap(function()
+				for i = 0,random(5,12) do
+					blood(h.CFrame * cf(0,-h.Size.Y/4,-h.Size.Z/1.85),h.CFrame.LookVector,0,random(.25,.5,100))
+					wait(random(.75,1.5,100))
+				end
+			end)()
+			coroutine.wrap(function()
+				pcall(function()
+					local div = .1
+					local time = random(1.5,2.5,10)
+					tween(hu,{Health = .01},{time,styles.Linear,directions.Out,0,false,0})
+					for i = 0,time,div do
+						if not ch.Parent then break end
+						blood(he.CFrame * cf(0,-he.Size.Y/2,-he.Size.Z/2),he.CFrame.LookVector + v3(random(-.1,.1,100),random(-.1,.1,100),random(-.1,.1,100)),random(2,5,100),random(.35,.6,100),ch)
+						wait(div)
+					end
+					kill(ch,true)
+				end)
+			end)()
+			if to then
+				pcall(function()
+					Instance.Remove(Instance.New("BodyVelocity",{
+						MaxForce = v3(math.huge,0,math.huge),
+						Velocity = rut.CFrame.LookVector * 35,
+						Parent = to
+					}),.05)
+				end)
+			end
+			tween(nec,{C0 = necc0 * cf(0,0,0) * angles(-2.5,0,0,true)},{.2,styles.Back,directions.Out,0,false,0})
+			tween(rutj,{C0 = rutjc0 * cf(0,.15,.2) * angles(12.5,0,0,true)},{.15,styles.Quart,directions.Out,0,false,0})
+			tween(rs,{C0 = rsc0 * cf(-.3,-.1,-.5) * angles(110,0,-5,true) * angles(0,20,0,true)},{.3,styles.Quart,directions.Out,0,false,0})
+			tween(ls,{C0 = lsc0 * cf(.3,-.1,-.5) * angles(105,0,2.5,true) * angles(0,-20,0,true)},{.3,styles.Quart,directions.Out,0,false,0})
+			tween(rh,{C0 = rhc0 * cf(0,.15,-.125) * angles(2.5,-5,2.5,true)},{.15,styles.Quart,directions.Out,0,false,0})
+			tween(lh,{C0 = lhc0 * cf(0,.15,-.15) * angles(-5,5,-2.5,true)},{.15,styles.Quart,directions.Out,0,false,0})
+		end
+	end
+	ws = 4
+	using = false
+end
+
+mouse.KeyDown:Connect(function(key)
+	if not using then
+		if key == "t" then
+			laugh()
+		elseif key == "e" then
+			attack1()
+		end
+	end
+	if key == "m" then
+		muted = not muted
+	end
+end)
+
+hum.HealthChanged:Connect(function()
+	hum.MaxHealth = 100
+	hum.Health = 100
+end)
+
+stepped:Connect(function()
+	if theme.Parent ~= t then
+		Instance.Remove(theme)
+		theme = Instance.New("Sound",{Volume = .75,Looped = true,SoundId = "rbxassetid://3276535626",TimePosition = timePos,Parent = t})
+	end
+	theme.Looped = true
+	theme:Resume()
+	theme.Pitch = .85
+	if not muted then
+		theme.Volume = .4
+	else
+		theme.Volume = 0
+	end
+	timePos = theme.TimePosition
+	sine = sine + change
+	idle2Progress = idle2Progress + 1
+	
+	local verVel = rut.Velocity.y
+	local horVel = (rut.Velocity * v3(1,0,1)).Magnitude
+
+	local Ccf=rut.CFrame
+	
+	local dir = hum.MoveDirection
+	
+	if dir == v3(0,0,0) then
+		dir = rut.Velocity/10
+	end
+
+	local Walktest1 = dir * Ccf.LookVector
+	local Walktest2 = dir * Ccf.RightVector
+
+	local rotfb = Walktest1.X+Walktest1.Z
+	local rotrl = Walktest2.X+Walktest2.Z
+	
+	if rotfb >1 then
+		rotfb = 1
+	elseif rotfb <-1 then
+		rotfb = -1
+	end
+	
+	if rotrl >1 then
+		rotrl = 1
+	elseif rotrl <-1 then
+		rotrl = -1
+	end
+	
+	hum.WalkSpeed = ws
+	hum.JumpPower = jp
+	
+	for i,v in pairs(game:GetService("Players"):GetPlayers()) do
+		if not v.PlayerGui:FindFirstChild(shaker.Name) then
+			local shak = shaker:Clone()
+			shak.Parent = v.PlayerGui
+			shak.Disabled = false
+		end
+	end
+	
+	hum.DisplayDistanceType = "None"
+	hum.HealthDisplayType = "AlwaysOff"
+	
+	local hit,pos,nId = rayc(rut.Position + v3(0,-rut.Size.y/2,0),v3(rut.Position.x,-10000,rut.Position.z),ignoreList,3)
+	
+	if using then
+		idle2Progress = 0
+		idle2SubCount = 0
+		anim = "idle"
+	elseif idle2State ~= 0 then
+		idle2Progress = 0
+	end
+	
+	if idle2Progress >= idle2Goal then
+		idle2Progress = 0
+		idle2State = random(1,3)
+		coroutine.wrap(function()
+			if idle2State == 1 then
+				wait(1)
+			elseif idle2State == 2 then
+				wait(2)
+			elseif idle2State == 3 then
+				wait(3.5)
+			end
+			if idle2State ~= 0 then
+				idle2State = 0
+				idle2SubCount = 0
+			end
+		end)()
+	end
+	
+	local headShakeNum = 0
+	local bodyShakeNum = 0
+	local r = random(0,1,headShakeRarity)
+	local r1 = random(0,1,bodyShakeRarity)
+	
+	if r == 1 then
+		headShakeNum = random(2.5,20,10)
+	elseif r1 == 1 then
+		bodyShakeNum = random(5,15,10)
+	end
+	
+	if anim == "idle" and hit then
+		local bodyOffset = cf(random(-bodyShakeNum/20,bodyShakeNum/20,100),random(-bodyShakeNum/20,bodyShakeNum/40,100),random(-bodyShakeNum/20,bodyShakeNum/20,100))
+		nec.C1 = nec.C1:Lerp(necc1 * cf(0,0,0) * angles(2.5 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0,0,true) * angles(random(-headShakeNum,headShakeNum,10),random(-headShakeNum,headShakeNum,10),random(-headShakeNum,headShakeNum,10),true),.1)
+		rutj.C1 = rutj.C1:Lerp(rutjc1 * bodyOffset * angles(bodyOffset.X,bodyOffset.Y,bodyOffset.Z) * cf(0,.15 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0) * angles(2.5 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0,0,true),.1)
+		rs.C1 = rs.C1:Lerp(rsc1 * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.15 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0) * angles(0,0,0,true),.1)
+		ls.C1 = ls.C1:Lerp(lsc1 * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.15 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0) * angles(0,0,0,true),.1)
+		rh.C1 = rh.C1:Lerp(rhc1 * bodyOffset * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.15 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0) * angles(3 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0,0,true),.1)
+		lh.C1 = lh.C1:Lerp(lhc1 * bodyOffset * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.15 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0) * angles(3 * sin(sine/25) * cos(sine/27.5) * (1 * (.1 * tan(sine/100))),0,0,true),.1)
+	elseif anim == "fall" and not hit then
+		nec.C1 = nec.C1:Lerp(necc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		rutj.C1 = rutj.C1:Lerp(rutjc1 * cf(0,0,0) * angles(0,0,0,true) * angles(-rotfb/6,0,-rotrl/6),.2)
+		rs.C1 = rs.C1:Lerp(rsc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		ls.C1 = ls.C1:Lerp(lsc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		rh.C1 = rh.C1:Lerp(rhc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		lh.C1 = lh.C1:Lerp(lhc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+	elseif anim == "jump" and not hit then
+		nec.C1 = nec.C1:Lerp(necc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		rutj.C1 = rutj.C1:Lerp(rutjc1 * cf(0,0,0) * angles(0,0,0,true) * angles(-rotfb/6,0,-rotrl/6),.2)
+		rs.C1 = rs.C1:Lerp(rsc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		ls.C1 = ls.C1:Lerp(lsc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		rh.C1 = rh.C1:Lerp(rhc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+		lh.C1 = lh.C1:Lerp(lhc1 * cf(0,0,0) * angles(0,0,0,true),.2)
+	elseif anim == "walk" and hit then
+		local bodyOffset = cf(random(-bodyShakeNum/20,bodyShakeNum/20,100),random(-bodyShakeNum/20,bodyShakeNum/40,100),random(-bodyShakeNum/20,bodyShakeNum/20,100))
+		nec.C1 = nec.C1:Lerp(necc1 * angles(random(-headShakeNum,headShakeNum,10),random(-headShakeNum,headShakeNum,10),random(-headShakeNum,headShakeNum,10),true) * cf(0,0,0) * angles(0,0,0,true) * angles(-rotfb/10,rotrl/2,0),.2)
+		rutj.C1 = rutj.C1:Lerp(rutjc1 * bodyOffset * angles(bodyOffset.X,bodyOffset.Y,bodyOffset.Z) * cf(0,-.1 + .15 * cos(sine/6) * -sin(sine/6),0) * angles(sin(sine/6) * 2.5,sin(sine/12) * 2.5,0,true) * angles(-rotfb/7.5,0,-rotrl/8.5),.2)
+		rs.C1 = rs.C1:Lerp(rsc1 * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.1 * cos(sine/12) * -sin(sine/12),0) * angles(sin(sine/12) * 2.5,0,0,true),.2)
+		ls.C1 = ls.C1:Lerp(lsc1 * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,.1,.075 * -sin(sine/12)) * angles(-5 + -cos(sine/12) * 15 * rotfb,cos(sine/12) * 12.5,0,true),.2)
+		rh.C1 = rh.C1:Lerp(rhc1 * bodyOffset * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,-.1 + -.15 * cos(sine/12),.1 + .2 * cos(sine/12)) * angles((-sin(sine/12) * 25) * rotfb + 5,cos(sine/12) * 5,-sin(sine/12) * 25 * rotrl,true),.2)
+		lh.C1 = lh.C1:Lerp(lhc1 * bodyOffset * angles(bodyOffset.X * 1.5,bodyOffset.Y * 1.5,bodyOffset.Z * 1.5) * cf(0,-.1 + .15 * cos(sine/12),.1 + -.2 * cos(sine/12)) * angles((sin(sine/12) * 25) * rotfb + 5,cos(sine/12) * 5,sin(sine/12) * 25 * rotrl,true),.2)
+	end
+	if not using then
+		if horVel > 2 and verVel >-10 and verVel <10 then
+			idle2Progress = 0
+			idle2State = 0
+			idle2SubCount = 0
+			anim = "walk"
+			change = 1
+			nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-35,-15,0,true),.2)
+			rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,0,0) * angles(0,0,0,true),.2)
+			rs.C0 = rs.C0:Lerp(rsc0 * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.2)
+			ls.C0 = ls.C0:Lerp(lsc0 * cf(0,0,0) * angles(0,0,0,true),.2)
+			rh.C0 = rh.C0:Lerp(rhc0 * cf(0,0,0) * angles(0,0,0,true),.2)
+			lh.C0 = lh.C0:Lerp(lhc0 * cf(0,0,0) * angles(0,0,0,true),.2)
+		elseif verVel >10 then
+			idle2Progress = 0
+			idle2State = 0
+			idle2SubCount = 0
+			anim = "jump"
+			change = 1
+			nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-35,-15,0,true),.2)
+			rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,0,0) * angles(-5,0,0,true),.2)
+			rs.C0 = rs.C0:Lerp(rsc0 * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.2)
+			ls.C0 = ls.C0:Lerp(lsc0 * cf(.2,.125,-.35) * angles(140,5,-25,true),.2)
+			rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.35,-.2) * angles(-10,-5,2.5,true),.2)
+			lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.2,-.1) * angles(2.5,5,-2.5,true),.2)
+		elseif verVel <-10 then
+			idle2Progress = 0
+			idle2State = 0
+			idle2SubCount = 0
+			anim = "fall"
+			change = 1
+			nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-35,-15,0,true),.2)
+			rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,0,0) * angles(5,0,0,true),.2)
+			rs.C0 = rs.C0:Lerp(rsc0 * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.2)
+			ls.C0 = ls.C0:Lerp(lsc0 * cf(.2,.125,-.35) * angles(150,15,-25,true),.2)
+			rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.35,-.2) * angles(-10,-5,2.5,true),.2)
+			lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.2,-.1) * angles(2.5,5,-2.5,true),.2)
+		elseif horVel < 2 and verVel >-10 and verVel <10 then
+			anim = "idle"
+			change = 1
+			if idle2State == 0 then
+				nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-35,-15,0,true),.1)
+				rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,.25,.1) * angles(5,0,0,true),.1)
+				rs.C0 = rs.C0:Lerp(rsc0 * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.1)
+				ls.C0 = ls.C0:Lerp(lsc0 * cf(.1,-.15,0) * angles(6,-20,-5,true),.1)
+				rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.25,-.15) * angles(3.5,-12.5,7.5,true),.1)
+				lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.25,-.25) * angles(-2,5,-5,true),.1)
+			elseif idle2State == 1 then
+				local sineDiv = 4.25
+				nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(cos(sine/sineDiv) * sin(sine/sineDiv) * 15,0,0,true) * angles(-35,-15,0,true),.2)
+				rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 2.5,0,0,true) * cf(0,.25,.1) * angles(5,0,0,true),.2)
+				rs.C0 = rs.C0:Lerp(rsc0 * cf(0,.2 * -sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(-sin(sine/sineDiv) * -cos(sine/sineDiv) * 3,0,-sin(sine/sineDiv) * cos(sine/sineDiv) * 5,true) * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.2)
+				ls.C0 = ls.C0:Lerp(lsc0 * cf(0,.2 * -sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(-sin(sine/sineDiv) * -cos(sine/sineDiv) * 3,0,-sin(sine/sineDiv) * cos(sine/sineDiv) * -5,true) * cf(.1,-.15,0) * angles(6,-20,-5,true),.2)
+				rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 3.1,0,0,true) * cf(0,.25,-.15) * angles(3.5,-12.5,7.5,true),.2)
+				lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.3 * sin(sine/sineDiv) * cos(sine/sineDiv),0) * angles(sin(sine/sineDiv) * cos(sine/sineDiv) * 3.1,0,0,true) * cf(0,.25,-.25) * angles(-2,5,-5,true),.2)
+			elseif idle2State == 2 then
+				idle2SubCount = idle2SubCount + 1
+				nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-35,-15,0,true),.1)
+				rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,.25,.1) * angles(5,0,0,true),.1)
+				rs.C0 = rs.C0:Lerp(rsc0 * cf(-.2,.25,-.1) * angles(120,0,-60,true) * angles(0,-70,0,true) * angles(25,15,-10,true),.1)
+				ls.C0 = ls.C0:Lerp(lsc0 * cf(.1,-.15,0) * angles(6,-25,-5,true) * angles((cos(idle2SubCount/12.5) + sin(idle2SubCount/12.5)/7) * 20,0,0,true),.1)
+				rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.25,-.15) * angles(3.5,-12.5,7.5,true),.1)
+				lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.25,-.25) * angles(-2,5,-5,true),.1)
+				if idle2SubCount >= 75 then
+					idle2SubCount = 0
+					idle2State = 0
+				end
+			elseif idle2State == 3 then
+				nec.C0 = nec.C0:Lerp(necc0 * cf(0,0,0) * angles(-45,0,0,true),.1)
+				rutj.C0 = rutj.C0:Lerp(rutjc0 * cf(0,.25,.2) * angles(10,0,0,true),.1)
+				rs.C0 = rs.C0:Lerp(rsc0 * cf(-.1,-.2,-.1) * angles(11,25,5,true),.1)
+				ls.C0 = ls.C0:Lerp(lsc0 * cf(.1,-.2,-.1) * angles(11,-25,-5,true),.1)
+				rh.C0 = rh.C0:Lerp(rhc0 * cf(0,.25,-.15) * angles(8.5,-12.5,7.5,true),.1)
+				lh.C0 = lh.C0:Lerp(lhc0 * cf(0,.25,-.25) * angles(3,5,-5,true),.1)
+			end
+		end
+	end
+end)
