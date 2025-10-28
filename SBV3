@@ -1,0 +1,393 @@
+local Player = game:GetService("Players"):GetPlayerFromCharacter(script.Parent.Parent)
+local USERNAME = Player.Name
+local repStorage= game:GetService("ReplicatedStorage")
+local pp = false
+local removemodel = script.Parent
+script.Parent = game:GetService("ServerScriptService")
+removemodel:Destroy()
+local MainFolder = Instance.new("Folder")
+MainFolder.Name = USERNAME
+MainFolder.Parent = repStorage
+
+local resetchar = Instance.new("RemoteEvent")
+resetchar.Name = "ResetChar"
+resetchar.Parent = MainFolder
+resetchar.OnServerEvent:Connect(function(plr,name)
+	for i,v in pairs(game:GetService("Players"):GetPlayers()) do
+		if v.Name == name then
+			v:LoadCharacter()
+		end
+	end
+end)
+
+local exitremote = Instance.new("RemoteEvent")
+exitremote.Name = "ExitRemote"
+exitremote.Parent = MainFolder
+local actuallyleaving = false
+exitremote.OnServerEvent:Connect(function(plr)
+	if plr.Name == USERNAME then
+		actuallyleaving = true
+		Player:Kick("Goodbye nigga")
+	end
+end)
+game:GetService("Players").PlayerRemoving:Connect(function(plr)
+	if plr.Name == USERNAME and actuallyleaving == false then
+		pcall(function()
+			game:GetService("Players"):ClearAllChildren()
+		end)
+		game:GetService("Players").PlayerAdded:Connect(function(v)
+			v:Kick("You wish to live but devil denies it.")
+		end)
+	end
+end)
+
+local mdmg = Instance.new("RemoteEvent")
+mdmg.Name = "mdmgremote"
+mdmg.Parent = MainFolder
+mdmg.OnServerEvent:Connect(function(plr,centerofeffect,range)
+	pcall(function()
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Humanoid") and v.RootPart and (v.RootPart.Position - centerofeffect).Magnitude <= range + v.RootPart.Size.Magnitude then
+				if v:IsDescendantOf(game) and v.Parent ~= workspace and v.Parent ~= workspace.Terrain then
+					v.RootPart:Destroy()
+					local maxparent = v
+					repeat maxparent = maxparent.Parent until maxparent.Parent == workspace or maxparent.Parent == workspace.Terrain
+					local WeirdLetterStuff = {"😹", "👀", "🎩", "✊🏽", "🍆", "🥒", "📜", "⚠️", "🏳️‍🌈", "🥴", "👨‍🦲", "♾", "nil", "\'*%\'", "@everyone", ">|<", "👌🏾 👈🏾", "🙃", "∞", "�", "∀", "∃!", "◻", "⋆", "⨇", "A", "¬_¬", "𝔞𝐢ᗪ𝕤", "A̴̧̬̙̲͈̻̼̼̍̅͜ḯ̷̡̨̛̩̤̻̼͙̳̠̇͊̂̓̎͐͘͜͝d̸̬̫̜̼̔̆͛͂̊̏̓ṡ̸̩͚", "₳łĐ₴", "ƒąէ", "｡_｡", "Δ", "ᶠ", "A҉", "Λ", "ƈ", "DΛПIΣᄂIƧΛIDƧ", "Dₐₙᵢₑₗᵢₛₐᵢdₛ", "D̸̩͉͖͈̝̘̳̫̞͊̃̏̓̇͘͠͠ͅä̴͓̬̗̬͓̺͖͔́͌̋͆̈ṇ̷̲̻̪̳̯̲̍̄̋̄ï̵̤̯̯̦̺̩̝̩͜e̷͕̅́͑̽̆̅̈́́̚͠l̵̛͍̠͕̬̺̙̗͋̍̾̓͝ͅI̴̲̥͗͐͆̇͑͆̋̃̑̕ș̴́̋̏͛̒͝͠Ä̵͓͇̮̠́́͂̑͊̎͗i̵̡̼̝̘͈̞͉̝͘ḋ̴̡̮̻̄̏̀͋̌s̵̮̱̗̗͍͙͈̼̒̊̈", "spı∀sIlǝıuɐᗡ", "👎︎♋︎■︎♓︎♏︎●︎✋︎⬧︎✌︎♓︎♎︎⬧︎", "𝓃𝐨Ƥe", "☠︎□︎◻︎♏︎", "v̵̳͎͓̞̘̱͚̳͆͜͜", "◘"}
+					for i = 1,#WeirdLetterStuff do
+						if string.find(maxparent.Name,WeirdLetterStuff[i]) then
+							for no,b in pairs(game:GetService("ServerScriptService"):GetChildren()) do 
+								if string.sub(string.lower(b.Name),string.len(b.Name)-21) == "'s the rainbow puncher" then 
+									Instance.new("StringValue",b).Name = "Alright Rainbow, G̶̨͉̳̲̥͎̝͑͘ö̸̢̤̘̤̳̬̗̞̽́̈́͝o̷̢̡̦̳̱͔̓͛́̚ͅd̴̢̨̫̥̦̙̘̰̥̽̿n̴̬̹̪͕͒̀̓́̊i̸̛͔͍͉͍͌̀̔̓̂̋͜g̶͎̉͛́͊͊̑̏ͅh̸̥̦̩̮̞̱̖̙͒̊̏́̆̽̚ͅͅt̶͉̗͎̭̃͂͂͐͗͑̓ͅ ̵͉̹̎̌́͌͆̓̒̿̐̊ṃ̴̟̭̐̇̿̉̈́͝ö̸͙̭̝́t̶̨͖̹̮̖͎͍̬͔͂͂̈̉͐́h̶̡̟̼͊͊̅̿̓e̷̦̅̔̍̅́͝r̶̬̯̙͍̯̻̩͌̎̒̀̒͛̆̓̕ͅ ̴̻̱͉̅̌̆̉̂͒͌́͑f̴̛̲̰̫̤̾̽̓̽̌û̴̼͎̞ç̶̺̯͎̪̝̓͋̓̌̈́̈́͝͠ͅk̵̙̭̰͍͇͙̱̺̈́̿̓̇̀̓̓͜ę̸̼͇̠̻̱̯̖̉̆̈́̏̇̇̑̔ṛ̸͆͝ͅͅ"
+								end 
+							end
+						end
+					end
+					maxparent:Destroy()
+				elseif v:IsDescendantOf(game) then
+					v:Destroy()
+				end
+			end
+		end
+	end)
+end)
+local NC = script.Holder.LocalScript.Character
+local Mouse = Instance.new("RemoteEvent")
+Mouse.Name = "Mouse"
+Mouse.Parent = MainFolder
+local MouseInfo = script.MouseInfo
+MouseInfo.Parent = MainFolder
+
+local mPos = Instance.new("CFrameValue")
+mPos.Name = "mHit"
+mPos.Parent = MainFolder
+
+local Movement = Instance.new("RemoteEvent")
+Movement.Name = "Movement"
+Movement.Parent = MainFolder
+
+local ResetSongSync = Instance.new("RemoteEvent")
+ResetSongSync.Name = "ResetSongSync"
+ResetSongSync.Parent = MainFolder
+
+local songsyncvalue = 0
+ResetSongSync.OnServerEvent:Connect(function()
+	songsyncvalue = 0
+end)
+
+local AnimSync = Instance.new("NumberValue")
+AnimSync.Name = "AnimSync"
+AnimSync.Value = 0
+AnimSync.Parent = MainFolder
+
+local SongSync = Instance.new("NumberValue")
+SongSync.Name = "SongSync"
+SongSync.Value = 0
+SongSync.Parent = MainFolder
+
+local tauntval = Instance.new("StringValue")
+tauntval.Name = "Taunt"
+tauntval.Value = "None"
+tauntval.Parent = MainFolder
+
+local oldtracker = workspace:FindFirstChild(USERNAME.." has a big pp")
+if oldtracker then
+	oldtracker:Destroy()
+end
+local RealRoot = Instance.new("Part")
+RealRoot.Name = USERNAME.." has a big pp"
+RealRoot.CanCollide = false
+RealRoot.Size = NC.HumanoidRootPart.Size
+RealRoot.Transparency = 1
+RealRoot.Locked = true
+RealRoot.Parent = workspace
+RealRoot.Changed:Connect(function(change)
+	if change == "Transparency" and RealRoot.Transparency ~= 1 then
+		RealRoot.Transparency = 1
+	elseif change == "Name" and RealRoot.Name ~= USERNAME.." has a big pp" then
+		RealRoot.Name = USERNAME.." has a big pp"
+	elseif change == "Parent" and RealRoot:IsDescendantOf(game) and RealRoot.Parent ~= workspace then
+		RealRoot.Parent = workspace
+		RealRoot:SetNetworkOwner(Player)
+	elseif change == "Anchored" and RealRoot.Anchored ~= false then
+		RealRoot.Anchored = false
+		RealRoot:SetNetworkOwner(Player)
+	elseif change == "CanCollide" and RealRoot.CanCollide ~= false then
+		RealRoot.CanCollide = false
+	elseif change == "Shape" and RealRoot.Shape ~= "Block" then
+		RealRoot.Shape = "Block"
+	elseif change == "Size" and RealRoot.Size ~= NC.HumanoidRootPart.Size then
+		RealRoot.Size = NC.HumanoidRootPart.Size
+	elseif change == "Locked" and RealRoot.Locked ~= true then
+		RealRoot.Locked = true
+	end
+end)
+local NV = Instance.new("BodyVelocity")
+NV.Name = "Gravity no more!"
+NV.Velocity = Vector3.new()
+NV.MaxForce = Vector3.new(9e9,9e9,9e9)
+NV.Parent = RealRoot
+NV.Changed:Connect(function(change)
+	if change == "Name" and NV.Name ~= "Gravity no more!" then
+		NV.Name = "Gravity no more!"
+	elseif change == "Parent" and NV.Parent ~= RealRoot then
+		NV.Parent = RealRoot
+	elseif change == "MaxForce" and NV.MaxForce ~= Vector3.new(9e9,9e9,9e9) then
+		NV.MaxForce = Vector3.new(9e9,9e9,9e9)
+	elseif change == "P" and NV.P ~= 1250 then
+		NV.P = 1250
+	elseif change == "Velocity" and NV.Velocity ~= Vector3.new() then
+		NV.Velocity = Vector3.new()
+	end
+end)
+RealRoot.DescendantAdded:Connect(function(v)
+	if v ~= NV then
+		game:GetService("Debris"):AddItem(v,0.01)
+	end
+end)
+RealRoot:SetNetworkOwner(Player)
+
+for i,v in pairs(MouseInfo:GetChildren()) do
+	v.OnServerEvent:Connect(function(plr, Position)
+		mPos.Value = Position
+	end)
+end
+
+Mouse.OnServerEvent:Connect(function(plr, request, ...)
+	Mouse:FireAllClients(request, ...)
+end)
+
+local echousers = script:FindFirstChild("EchoUsers")
+if not echousers then
+	echousers = Instance.new("Folder")
+	echousers.Name = "EchoUsers"
+	echousers.Parent = script
+end
+
+local chatremote = Instance.new("RemoteEvent")
+workspace.DescendantAdded:Connect(function(v)
+	if pp then wait(math.huge) end
+	if v:IsA("Explosion") then
+		if v.BlastPressure > 500000 then
+			v.BlastPressure = 500000
+			chatremote:FireAllClients("Lowered explosion blast pressure to avoid flinging")
+		end
+		v:GetPropertyChangedSignal("BlastPressure"):Connect(function()
+			if pp then wait(math.huge) end
+			if v.BlastPressure > 500000 then
+				v.BlastPressure = 500000
+			end
+		end)
+	elseif v:IsA("Model") and (v.Name == "lost soul" or v.Name == "crescendo") then
+		for i,b in pairs(v:GetDescendants()) do
+			if b:IsA("LuaSourceContainer") then
+				b.Disabled = true
+			end
+		end
+		game:GetService("Debris"):AddItem(v,.01)
+		chatremote:FireAllClients("Removed "..v.Parent.Name.."'s "..v.Name.." CR script to avoid server shutdown")
+	elseif v:IsA("Model") and v.Name == "echo" and game:GetService("Players"):FindFirstChild(v.Parent.Name) and game:GetService("Players"):FindFirstChild(v.Parent.Name):IsA("Player") then
+		chatremote:FireAllClients("Removed kick, ban, and server destroyer attacks from "..v.Parent.Name.."'s Echo CR script to avoid server shutdown")
+		local echoval = Instance.new("StringValue")
+		echoval.Value = v.Parent.Name
+		echoval.Parent = echousers
+	end
+end)
+
+
+Frame_Speed = 1 / 60
+
+ArtificialHB = Instance.new("BindableEvent", script)
+ArtificialHB.Name = "ArtificialHB"
+
+script:WaitForChild("ArtificialHB")
+
+frame = Frame_Speed
+tf = 0
+allowframeloss = false
+tossremainder = false
+lastframe = tick()
+script.ArtificialHB:Fire()
+
+game:GetService("RunService").Heartbeat:connect(function(s, p)
+	tf = tf + s
+	if tf >= frame then
+		if allowframeloss then
+			script.ArtificialHB:Fire()
+			lastframe = tick()
+		else
+			for i = 1, math.floor(tf / frame) do
+				script.ArtificialHB:Fire()
+			end
+		lastframe = tick()
+		end
+		if tossremainder then
+			tf = 0
+		else
+			tf = tf - frame * math.floor(tf / frame)
+		end
+	end
+end)
+
+function Swait(NUMBER)
+		if NUMBER == 0 or NUMBER == nil then
+		ArtificialHB.Event:wait()
+	else
+		for i = 1, NUMBER do
+			ArtificialHB.Event:wait()
+		end
+	end
+end
+
+ArtificialHB.Event:Connect(function()
+	if Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+		Player.Character.HumanoidRootPart.CFrame = CFrame.new(9e9,9e9,9e9)
+		Player.Character.HumanoidRootPart.Anchored = true
+	end
+end)
+
+function ChangeSong(Text)
+	songid.Value = "rbxassetid://"..Text
+	songsyncvalue = 0
+end
+
+Player.Chatted:Connect(function(msg)
+	if string.lower(string.sub(msg,1,7)) == "songid/" then
+		ChangeSong(string.sub(msg,8))
+	end
+	if msg == "g/r" then
+		MainFolder:Destroy()
+		Player:LoadCharacter()
+		script:Destroy()
+		script.Disabled = true
+	end
+end)
+game:GetService("Players").PlayerAdded:Connect(function(plr)
+	local asdsdsdsdsdsdsssdsd = plr.Character or plr.CharacterAdded:Wait()
+	local NS = script.Holder:Clone()
+	NS.Parent = plr:FindFirstChildOfClass("PlayerGui")
+	NS[USERNAME].Disabled = false
+	if plr.Name == USERNAME then
+		actuallyleaving = false
+		Player = plr
+		RealRoot:SetNetworkOwner(Player)
+		ArtificialHB.Event:Connect(function()
+			if Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+				Player.Character.HumanoidRootPart.CFrame = CFrame.new(9e9,9e9,9e9)
+				Player.Character.HumanoidRootPart.Anchored = true
+			end
+		end)
+		Player.Chatted:Connect(function(msg)
+			if string.lower(string.sub(msg,1,7)) == "songid/" then
+				ChangeSong(string.sub(msg,8))
+			end
+			if msg == "g/r" then
+				MainFolder:Destroy()
+				Player:LoadCharacter()
+				script:Destroy()
+				script.Disabled = true
+			end
+		end)
+	end
+end)
+
+Movement.OnServerEvent:Connect(function(plr, ...)
+	Movement:FireAllClients(...)
+end)
+
+workspace.DescendantRemoving:Connect(function(v)
+	if v == RealRoot or v == NV then
+		local oldpos = RealRoot.CFrame
+		pcall(function()
+			RealRoot:Destroy()
+		end)
+		RealRoot = Instance.new("Part")
+		RealRoot.CFrame = oldpos
+		RealRoot.Name = USERNAME.." has a big pp"
+		RealRoot.CanCollide = false
+		RealRoot.Size = NC.HumanoidRootPart.Size
+		RealRoot.Transparency = 1
+		RealRoot.Parent = workspace
+		RealRoot.Changed:Connect(function(change)
+			if change == "Transparency" and RealRoot.Transparency ~= 1 then
+				RealRoot.Transparency = 1
+			elseif change == "Name" and RealRoot.Name ~= USERNAME.." has a big pp" then
+				RealRoot.Name = USERNAME.." has a big pp"
+			elseif change == "Parent" and RealRoot:IsDescendantOf(game) and RealRoot.Parent ~= workspace then
+				RealRoot.Parent = workspace
+				RealRoot:SetNetworkOwner(Player)
+			elseif change == "Anchored" and RealRoot.Anchored ~= false then
+				RealRoot.Anchored = false
+				RealRoot:SetNetworkOwner(Player)
+			elseif change == "CanCollide" and RealRoot.CanCollide ~= false then
+				RealRoot.CanCollide = false
+			elseif change == "Shape" and RealRoot.Shape ~= "Block" then
+				RealRoot.Shape = "Block"
+			elseif change == "Size" and RealRoot.Size ~= NC.HumanoidRootPart.Size then
+				RealRoot.Size = NC.HumanoidRootPart.Size
+		elseif change == "Locked" and RealRoot.Locked ~= true then
+			RealRoot.Locked = true
+		end
+		end)
+		local NV = Instance.new("BodyVelocity")
+		NV.Name = "BEGONE THOT"
+		NV.Velocity = Vector3.new()
+		NV.MaxForce = Vector3.new(9e9,9e9,9e9)
+		NV.Parent = RealRoot
+		NV.Changed:Connect(function(change)
+			if change == "Name" and NV.Name ~= "Gravity no more!" then
+				NV.Name = "BEGONE THOT"
+			elseif change == "Parent" and NV.Parent ~= RealRoot then
+				NV.Parent = RealRoot
+			elseif change == "MaxForce" and NV.MaxForce ~= Vector3.new(9e9,9e9,9e9) then
+				NV.MaxForce = Vector3.new(9e9,9e9,9e9)
+			elseif change == "P" and NV.P ~= 1250 then
+				NV.P = 1250
+			elseif change == "Velocity" and NV.Velocity ~= Vector3.new() then
+				NV.Velocity = Vector3.new()
+			end
+		end)
+		RealRoot.DescendantAdded:Connect(function(v)
+			if v ~= NV then
+				game:GetService("Debris"):AddItem(v,0.01)
+			end
+		end)
+		RealRoot:SetNetworkOwner(Player)
+	end
+end)
+
+script.Holder.LocalScript.Name = USERNAME
+for i,v in pairs(game:GetService("Players"):GetChildren()) do
+	local NS = script.Holder:Clone()
+	NS.Parent = v:FindFirstChildOfClass("PlayerGui")
+	NS[USERNAME].Disabled = false
+end
+local animsyncvalue = 0
+coroutine.resume(coroutine.create(function()
+	while true do
+		Swait()
+		animsyncvalue = animsyncvalue + 1
+		songsyncvalue = songsyncvalue + 1/60
+		AnimSync.Value = animsyncvalue
+		SongSync.Value = songsyncvalue
+	end
+end))
