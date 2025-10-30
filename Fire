@@ -1,0 +1,194 @@
+local RS = game:GetService("ReplicatedStorage")
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+	--Animation
+	local FireArrow = humanoid:LoadAnimation(RS.Assets.Animations.FireArrow)
+	FireArrow:Play()
+	--sound
+	local Sound = RS.Assets.Sound["Fire Arrow"]:Clone()
+	Sound.Parent = hrp
+	Sound:Play()
+	FireArrow:GetMarkerReachedSignal("HandOn"):Connect(function()
+		--Spwn Part and weld
+		local FireHand = RS.Stuff.FireHand:Clone()
+		FireHand.Parent = char["Right Arm"]
+		FireHand.CFrame = char["Right Arm"].CFrame * CFrame.new(0,0,0)
+		local weldaura2 = Instance.new("Weld",FireHand)
+		weldaura2.Part0 = char["Right Arm"]
+		weldaura2.Part1 = FireHand
+		weldaura2.C0 = CFrame.new(0,-1,0)
+		--Spwn Part and weld
+		local FireHand2 = RS.Stuff.FireHand2:Clone()
+		FireHand2.Parent = char["Left Arm"]
+		FireHand2.CFrame = char["Left Arm"].CFrame * CFrame.new(0,0,0)
+		local weldaura2 = Instance.new("Weld",FireHand2)
+		weldaura2.Part0 = char["Left Arm"]
+		weldaura2.Part1 = FireHand2
+		weldaura2.C0 = CFrame.new(0,-1,0)
+
+		FireArrow:GetMarkerReachedSignal("Clap"):Connect(function()
+			local CameraShaker = script.CameraShaker:Clone()
+			CameraShaker.Parent = char
+			CameraShaker.Enabled = true
+			local VFXArrow = RS.Stuff.Arms:Clone()
+			VFXArrow.Parent = workspace.Visuals
+
+			VFXArrow.Right.CFrame = char["Right Arm"].CFrame
+
+			local Right = Instance.new("Weld")
+			Right.Part0, Right.Part1 = VFXArrow.Right, char["Right Arm"]
+			Right.Parent = Right.Part0
+
+			VFXArrow.Left.CFrame = char["Left Arm"].CFrame
+			local Left = Instance.new("Weld")
+			Left.Part0, Left.Part1 = VFXArrow.Left, char["Left Arm"]
+			Left.Parent = Left.Part0
+			local HS = script.HS:Clone()
+			HS.Parent = char
+			HS.Enabled = true
+			game.Debris:AddItem(HS, 2)
+			local ClapEFX = RS.Stuff.ClapEFX:Clone()
+			ClapEFX.Parent = char["HumanoidRootPart"]
+			ClapEFX.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,0,0)
+			local weldaura2 = Instance.new("Weld",ClapEFX)
+			weldaura2.Part0 = char["HumanoidRootPart"]
+			weldaura2.Part1 = ClapEFX
+			weldaura2.C0 = CFrame.new(0,0,0)
+			wait(0.01)
+			--EmitCount
+			for i,v in pairs(ClapEFX:GetDescendants()) do--Name ur part 
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+			FireArrow:GetMarkerReachedSignal("HandOff"):Connect(function()
+				FireHand:Destroy()
+				FireHand2:Destroy()
+				VFXArrow:Destroy()
+				local Arrowplace = RS.Stuff.Arrowplace:Clone()
+				Arrowplace.Parent = char["HumanoidRootPart"]
+				Arrowplace.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,0,0)
+				local weldaura2 = Instance.new("Weld",Arrowplace)
+				weldaura2.Part0 = char["HumanoidRootPart"]
+				weldaura2.Part1 = Arrowplace
+				weldaura2.C0 = CFrame.new(0,-2.8,0)
+				wait(0.01)
+				for _,Particles in pairs(Arrowplace:GetDescendants()) do
+					if Particles:IsA("ParticleEmitter") then
+						Particles.Enabled = true
+					end
+				end
+				local Arrow = RS.Stuff["FireArrow Arrow"]:Clone()
+				Arrow.Parent = char["HumanoidRootPart"]
+				Arrow.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0.5,0,-1)
+				local weldaura2 = Instance.new("Weld",Arrow)
+				weldaura2.Part0 = char["HumanoidRootPart"]
+				weldaura2.Part1 = Arrow
+				weldaura2.C0 = CFrame.new(0.5,0,-1) * CFrame.fromEulerAnglesXYZ(0,math.rad(180),0)
+				wait(0.01)
+				for _,Particles in pairs(Arrow:GetDescendants()) do
+					if Particles:IsA("ParticleEmitter") then
+						Particles.Enabled = true
+					end
+				end
+				for _,Particles in pairs(Arrow:GetDescendants()) do
+					if Particles:IsA("Beam") then
+						Particles.Enabled = true
+					end
+				end
+				FireArrow:GetMarkerReachedSignal("Shoot"):Connect(function()
+					for _,Particles in pairs(Arrowplace:GetDescendants()) do
+						if Particles:IsA("ParticleEmitter") then
+							Particles.Enabled = false
+						end
+					end
+					local Shoot = RS.Stuff.Shoot:Clone()
+					Shoot.Parent = char["HumanoidRootPart"]
+					Shoot.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,-2.8,0)
+					wait(0.01)
+					for i,v in pairs(Shoot:GetDescendants()) do--Name ur part 
+						if v:IsA("ParticleEmitter") then
+							v:Emit(v:GetAttribute("EmitCount"))
+						end
+					end
+					weldaura2:Destroy()
+					game:GetService("TweenService"):Create(Arrow, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {CFrame = Arrow.CFrame * CFrame.new(0, 0, 150)}):Play()
+					FireArrow:GetMarkerReachedSignal("Area"):Connect(function()
+						local Explosion = RS.Stuff.Explosion:Clone()
+						Explosion.Parent = char
+						Explosion.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,-5,-150)
+						wait(0.01)
+						for i,v in pairs(Explosion.Explosion.Attachment:GetDescendants()) do--Name ur part 
+							if v:IsA("ParticleEmitter") then
+								v:Emit(v:GetAttribute("EmitCount"))
+							end
+						end
+						for _,Particles in pairs(Explosion.Explosion.AAA:GetDescendants()) do
+							if Particles:IsA("Beam") then
+								Particles.Enabled = true
+							end
+						end
+						for _,Particles in pairs(Explosion.Explosion.Attachment:GetDescendants()) do
+							if Particles:IsA("ParticleEmitter") then
+								Particles.Enabled = true
+							end
+						end
+						for _,Particles in pairs(Explosion.Explosion.Attachment:GetDescendants()) do
+							if Particles:IsA("Beam") then
+								Particles.Enabled = true
+							end
+						end
+						local ImpactFrame = script.ImpactFrame:Clone()
+						ImpactFrame.Parent = char
+						ImpactFrame.Enabled = true
+						wait(1.3)
+						for _,Particles in pairs(Explosion:GetDescendants()) do
+							if Particles:IsA("Beam") then
+								Particles.Enabled = false
+							end
+						end
+						for _,Particles in pairs(Explosion:GetDescendants()) do
+							if Particles:IsA("ParticleEmitter") then
+								Particles.Enabled = false
+							end
+						end
+						local ImpactFrame = script.ImpactFrame:Clone()
+						ImpactFrame.Parent = char
+						ImpactFrame.Enabled = true
+						local CameraShaker2 = script.CameraShaker2:Clone()
+						CameraShaker2.Parent = char
+						CameraShaker2.Enabled = true
+						for _,Particles in pairs(Explosion.Explosion.BlitzOLD:GetDescendants()) do
+							if Particles:IsA("ParticleEmitter") then
+								Particles.Enabled = true
+							end
+						end
+						for _,Particles in pairs(Explosion.Explosion.BlitzOLD:GetDescendants()) do
+							if Particles:IsA("Beam") then
+								Particles.Enabled = true
+							end
+						end
+						for i,v in pairs(Explosion.Explosion.Bomb:GetDescendants()) do--Name ur part 
+							if v:IsA("ParticleEmitter") then
+								v:Emit(v:GetAttribute("EmitCount"))
+							end
+						end
+						wait(1.5)
+						for _,Particles in pairs(Explosion.Explosion.BlitzOLD:GetDescendants()) do
+							if Particles:IsA("ParticleEmitter") then
+								Particles.Enabled = false
+							end
+						end
+						for _,Particles in pairs(Explosion.Explosion.BlitzOLD:GetDescendants()) do
+							if Particles:IsA("Beam") then
+								Particles.Enabled = false
+							end
+						end
+					end)
+				end)
+			end)
+		end)
+	end)
+end)
