@@ -1,0 +1,97 @@
+local RS = game:GetService("ReplicatedStorage")
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+	humanoid.WalkSpeed = 0
+	humanoid.JumpPower = 0
+	humanoid.JumpHeight = 0
+	local Sound = RS.Assets.Sound["World Cut"]:Clone()
+	Sound.Parent = hrp
+	Sound:Play()
+	--Animation
+	local WorldCut = humanoid:LoadAnimation(RS.Assets.Animations.WorldCut)
+	WorldCut:Play()
+	local S1 = RS.Stuff.S1:Clone()
+	S1.Parent = char["HumanoidRootPart"]
+	S1.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,0,0)
+	WorldCut:GetMarkerReachedSignal("first"):Connect(function()
+		local CameraShaker = script.CameraShaker:Clone()
+		CameraShaker.Parent = char
+		CameraShaker.Enabled = true
+		for i,v in pairs(S1.s1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		WorldCut:GetMarkerReachedSignal("sec"):Connect(function()
+			local CameraShaker = script.CameraShaker:Clone()
+			CameraShaker.Parent = char
+			CameraShaker.Enabled = true
+			for i,v in pairs(S1.s2:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+			WorldCut:GetMarkerReachedSignal("third"):Connect(function()
+				local CameraShaker = script.CameraShaker:Clone()
+				CameraShaker.Parent = char
+				CameraShaker.Enabled = true
+				for i,v in pairs(S1.s3:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v:Emit(v:GetAttribute("EmitCount"))
+					end
+				end
+				local Aura = RS.Stuff.Aura:Clone()
+				Aura.Parent = char["HumanoidRootPart"]
+				Aura.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,0,0)
+				local weldaura2 = Instance.new("Weld",Aura)
+				weldaura2.Part0 = char["HumanoidRootPart"]
+				weldaura2.Part1 = Aura
+				weldaura2.C0 = CFrame.new(0,-2.5,0)
+				local ArmAura = RS.Stuff.ArmAura:Clone()
+				ArmAura.Parent = char["Right Arm"]
+				ArmAura.CFrame = char["Right Arm"].CFrame * CFrame.new(0,0,0)
+				local weldaura2 = Instance.new("Weld",ArmAura)
+				weldaura2.Part0 = char["Right Arm"]
+				weldaura2.Part1 = ArmAura
+				weldaura2.C0 = CFrame.new(0,-1,0)
+				local loopCameraShaker = script.loopCameraShaker:Clone()
+				loopCameraShaker.Parent = char
+				loopCameraShaker.Enabled = true
+				WorldCut:GetMarkerReachedSignal("fifth"):Connect(function()
+					local BigCameraShaker = script.BigCameraShaker:Clone()
+					BigCameraShaker.Parent = char
+					BigCameraShaker.Enabled = true
+					local WorldSlash = RS.Stuff.WorldSlash:Clone()
+					WorldSlash.Parent = char["HumanoidRootPart"]
+					WorldSlash.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,-2.5,0) * CFrame.fromEulerAnglesXYZ(0,math.rad(180),0)
+					game:GetService("TweenService"):Create(WorldSlash, TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {CFrame = WorldSlash.CFrame * CFrame.new(0, 0, 150)}):Play()
+
+					local SLASH = RS.Stuff.SLASH:Clone()
+					SLASH.Parent = char["HumanoidRootPart"]
+					SLASH.CFrame = char["HumanoidRootPart"].CFrame * CFrame.new(0,-2.5,0)
+					wait(0.01)
+					for i,v in pairs(SLASH:GetDescendants()) do
+						if v:IsA("ParticleEmitter") then
+							v:Emit(v:GetAttribute("EmitCount"))
+						end
+					end
+					WorldCut:GetMarkerReachedSignal("sixth"):Connect(function()
+						loopCameraShaker.Enabled = false
+						Aura:Destroy()
+						ArmAura:Destroy()
+						S1:Destroy()
+						humanoid.WalkSpeed = 16
+						humanoid.JumpPower = 50.145
+						humanoid.JumpHeight = 7.2
+						WorldSlash:Destroy()
+
+						wait(3)
+						SLASH:Destroy()
+					end)
+				end)
+			end)
+		end)
+	end)
+end)
