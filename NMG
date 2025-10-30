@@ -1,0 +1,980 @@
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local Utility = require(RS.Modules:WaitForChild('Utility'))
+local RunService = game:GetService("RunService")
+local ParticlesModule = Utility('Particles')
+local ragdoll = require(RS.Modules.ragdoll)
+local BoatTween = require(RS.Modules.BoatTween)
+local Players = game:GetService("Players")
+local camera = workspace.CurrentCamera
+local player = Players.LocalPlayer
+local rad = math.rad
+
+local vel
+local RagdollTime = 10 -- Ragdoll
+local FinalDamage = 150 -- Damage
+
+RS.Jun["No More Games"].Remote.NGM.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+
+	local hitbox = RS.Jun["No More Games"].Hitbox:Clone()
+
+	local Stun = script.Parent.Stun:Clone()
+	local UnStun = script.Parent.UnStun:Clone()
+
+	local Stun2 = script.Parent.Stun:Clone()
+	local UnStun2 = script.Parent.UnStun:Clone()
+
+	local Grab = humanoid:LoadAnimation(script.Anim)
+	Grab:Play()
+
+	local StartupSound = script.Startup:Clone()
+	StartupSound.Parent = hrp
+	StartupSound:Play()
+	game.Debris:AddItem(StartupSound, 5)
+
+	Grab:GetMarkerReachedSignal("Jump"):Connect(function()
+		local targetPosition = hrp.Position + Vector3.new(0, 25, 0)
+		local effect1 = RS.Jun["No More Games"].Jump.Dust:Clone()
+		effect1.Parent = hrp
+		for i,v in pairs(effect1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		game.Debris:AddItem(effect1,4)
+
+		for i, b in pairs(effect1:GetDescendants()) do
+			if b:IsA("ParticleEmitter") then
+				b.Enabled = false
+			elseif b:IsA("Attachment") then
+				for _, attachmentChild in pairs(b:GetChildren()) do
+					if attachmentChild:IsA("ParticleEmitter") then
+						attachmentChild.Enabled = false
+					end
+				end
+			end
+		end
+
+		local Jump1 = TweenInfo.new(
+			.3,
+			Enum.EasingStyle.Sine,
+			Enum.EasingDirection.Out,
+			0,
+			false,
+			0
+		)
+
+		local goal = {}
+		goal.Position = targetPosition
+
+		local humanoidRootPart = char:FindFirstChild("HumanoidRootPart")
+
+		if humanoidRootPart then
+			local tween = TweenService:Create(humanoidRootPart, Jump1, goal)
+			tween:Play()
+		end
+
+
+		Grab:GetMarkerReachedSignal("Land"):Connect(function()
+			local targetPosition = hrp.Position + Vector3.new(0, -25, 0)
+			spawn(function()
+				task.wait(.1)
+				local effect1 = RS.Jun["No More Games"].LandTeleport.Dust:Clone()
+				effect1.Parent = hrp
+				for i,v in pairs(effect1:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v:Emit(v:GetAttribute("EmitCount"))
+					end
+				end
+				game.Debris:AddItem(effect1,4)
+
+				local effect2 = RS.Jun["No More Games"].LandTeleport.Dust.Attachment:Clone() -- Attachment
+				effect2.Parent = hrp
+				for i,v in pairs(effect2:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v:Emit(v:GetAttribute("EmitCount"))
+					end
+				end
+				game.Debris:AddItem(effect2,4)
+
+				local effect3 = RS.Jun["No More Games"].LandTeleport:Clone()
+				effect3.Parent = workspace.FX
+				effect3.CFrame = hrp.CFrame * CFrame.Angles(0,math.rad(180),0)
+				for i,v in pairs(effect3:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v:Emit(v:GetAttribute("EmitCount"))
+					end
+				end
+				game.Debris:AddItem(effect3,4)
+				
+				task.wait(.5)
+				hrp.CFrame = effect3.Part.CFrame * CFrame.Angles(0,math.rad(180),0)
+			end)
+
+			local Jump2 = TweenInfo.new(
+				.1,
+				Enum.EasingStyle.Sine,
+				Enum.EasingDirection.Out,
+				0,
+				false,
+				0
+			)
+
+			local goal = {}
+			goal.Position = targetPosition
+
+			local humanoidRootPart = char:FindFirstChild("HumanoidRootPart")
+
+			if humanoidRootPart then
+				local tween = TweenService:Create(humanoidRootPart, Jump2, goal)
+				tween:Play()
+			end
+		end)
+	
+	end)
+	
+	Grab:GetMarkerReachedSignal("Claw1"):Connect(function()
+		spawn(function()
+			local clawCFrame = hrp.CFrame * CFrame.new(0, -28, -25) * CFrame.Angles(math.pi / 2, 0, math.pi / 6) + Vector3.new(0, 0.01, 0)
+
+			local groundClaw = RS.Jun["No More Games"].GroundClaw:Clone()
+			groundClaw:PivotTo(clawCFrame)
+			groundClaw.Parent = workspace.FX
+
+			ParticlesModule.EnabledV2(groundClaw, .07)
+
+			task.delay(3, function()
+				for _, Beam in pairs(groundClaw:GetDescendants()) do
+					if Beam:IsA("Beam") then
+						BoatTween:Create(Beam, {
+							Time = 1, 
+							EasingStyle = 'Quad', 
+							EasingDirection = 'Out', 
+							Reverses = false, 
+							DelayTime = 0, 
+							RepeatCount = 0, 
+							StepType = "Heartbeat", 
+							Goal = {
+								Transparency = NumberSequence.new(1)
+							}
+						}):Play()
+					end
+				end
+			end)
+			game.Debris:AddItem(groundClaw, 5.7)
+		end)
+	end)
+	
+	Grab:GetMarkerReachedSignal("Claw2"):Connect(function()
+		spawn(function()
+			local clawCFrame = hrp.CFrame * CFrame.new(0, -28, -25) * CFrame.Angles(math.pi / 2, 0, math.pi / -6) + Vector3.new(0, 0.01, 0)
+
+			local groundClaw = RS.Jun["No More Games"].GroundClaw:Clone()
+			groundClaw:PivotTo(clawCFrame)
+			groundClaw.Parent = workspace.FX
+
+			ParticlesModule.EnabledV2(groundClaw, .07)
+
+			task.delay(3, function()
+				for _, Beam in pairs(groundClaw:GetDescendants()) do
+					if Beam:IsA("Beam") then
+						BoatTween:Create(Beam, {
+							Time = 1, 
+							EasingStyle = 'Quad', 
+							EasingDirection = 'Out', 
+							Reverses = false, 
+							DelayTime = 0, 
+							RepeatCount = 0, 
+							StepType = "Heartbeat", 
+							Goal = {
+								Transparency = NumberSequence.new(1)
+							}
+						}):Play()
+					end
+				end
+			end)
+			
+			game.Debris:AddItem(groundClaw, 5.7)
+		end)
+	end)
+
+	humanoid.AutoRotate = true
+	local vel = Instance.new("BodyVelocity", hrp)
+	vel.MaxForce = Vector3.new(1,1,1) * 1000000;
+	vel.Parent = hrp
+	vel.Velocity = Vector3.new(1,1,1) * plr.Character:WaitForChild("HumanoidRootPart").CFrame.LookVector * 0
+	vel.Name  =  "SmallMoveVel"
+	Grab:GetMarkerReachedSignal("Grab"):Connect(function()
+		hitbox.Parent = workspace
+		hitbox.Size = Vector3.new(5.016, 5.099, 78.682)
+		hitbox.CFrame = hrp.CFrame * CFrame.new(0, 0, 30)
+		hitbox.Transparency = 1
+		local hitcontent = workspace:GetPartBoundsInBox(hitbox.CFrame, Vector3.new(5.016, 5.099, 78.682))
+		local hitlist = {}
+		for _,v in pairs(hitcontent) do	
+			if v.Parent:FindFirstChild("Humanoid") and v.Parent ~= char and v.Parent.HumanoidRootPart.Anchored == false and v.Parent.Humanoid.Health ~= 0 then
+				if not hitlist[v.Parent.Humanoid] then
+					local ClawTimes = { 8.967, 9.133, 9.300, 9.467, 9.633, 9.800, 9.967, 10.133, 10.300, 10.450 }
+					hitlist[v.Parent.Humanoid] = true
+					hitbox:Destroy()
+					StartupSound:Stop()
+					Grab:Stop()
+					
+					local offsets = {
+						CFrame.new(0.71049118, -0.819227457, 28.009634, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(0.0880661011, -0.042126894, 32.0998764, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.777580261, 0.27737546, 27.037487, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(-0.106033325, -0.785628557, 30.8452282, 0, 1, 0, 0, 0, 1, 1, 0, 0), 
+						CFrame.new(-3.91207504, -2.30182791, 29.5179348, -1, 0, -8.74227766E-8, 0, 1, 0, 8.74227766E-8, 0, -1), 
+						CFrame.new(0.574459076, 0.684072018, 33.115921, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.777580261, -0.318288565, 28.0834866, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(0.0880661011, 1.84627271, 30.4341278, 0, 1, 0, 0, 0, -1, -1, 0, 0), 
+						CFrame.new(-3.91207504, -2.30182791, 31.3254356, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.06085205, 0.779309511, 32.7960625, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.777580261, -0.727227926, 29.1030865, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(-2.24403381, 2.23440194, 31.9885387, 0, 1, 0, -0.586089611, 0, 0.810246229, 0.810246229, 0, 0.586089611), 
+						CFrame.new(-3.91207504, -2.30182791, 34.1896362, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.54692459, 0.759572268, 35.5098343, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.721382141, -0.535927773, 32.0230865, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(-2.04561996, -0.00390076637, 34.5606804, 0, 1, 0, 0.0431137085, 0, 0.999070168, 0.999070168, 0, -0.0431137085), 
+						CFrame.new(-3.91207504, -2.30182791, 35.3154335, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.54724503, 1.40524268, 38.9238052, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.721382141, -1.56603026, 36.4297867, -0.208854645, 0.400972664, 0.891964674, -0.488084346, 0.747622788, -0.450371027, -0.847439349, -0.529416025, 0.0395639911), 
+						CFrame.new(-1.84720612, 0.379056692, 36.9565582, 0, 1, 0, 0.427484035, 0, 0.904022813, 0.904022813, 0, -0.427484035), 
+						CFrame.new(-3.91207504, -2.30182791, 37.7417336, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.54692459, 1.40517211, 39.7390366, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.921867371, 1.39408422, 37.4130783, 0.0365658887, 0.998001516, -0.0515369773, 0.577498615, -0.0631911755, -0.813942432, -0.815572381, 0, -0.578655064), 
+						CFrame.new(-1.08403397, 2.16676688, 40.6197586, 0, 1, 0, -0.588871956, 0, 0.808226347, 0.808226347, 0, 0.588871956), 
+						CFrame.new(0.710926056, -0.818827868, 41.5255737, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(3.66992569, 0.885247946, 42.9402618, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.777580261, 0.308982849, 41.8755608, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(-0.696075439, -0.398999691, 41.5106544, 0, 1, 0, -0.290402174, 0, 0.956904709, 0.956904709, 0, 0.290402174), 
+						CFrame.new(-3.91207504, -2.30182791, 43.6224365, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.54692459, 1.40517211, 44.7205353, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(1.42086792, 2.15895963, 40.0685806, 0.875162661, -0.482495815, 0.0358928107, 0.457657397, 0.849610031, 0.262130976, -0.156971991, -0.212980628, 0.964364588), 
+						CFrame.new(-0.88993454, -1.13969016, 43.6196899, 0, 1, 0, -0.532152474, 0, 0.846648872, 0.846648872, 0, 0.532152474), 
+						CFrame.new(-3.91207504, -2.30182791, 50.0821342, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(1.54692459, 1.40517211, 48.6041336, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.777580261, 0.0510718822, 47.0561867, 0.0466357097, 0, 0.998911977, 0, 1, 0, -0.998911977, 0, 0.0466357097), 
+						CFrame.new(-0.695835114, -0.0266363621, 50.59729, 0, 1, 0, -0.776178539, 0, -0.630513251, -0.630513251, 0, 0.776178539), 
+						CFrame.new(-3.92607498, -0.375827789, 49.6901398, -1, 0, 0, 0, 1, 0, 0, 0, -1), 
+						CFrame.new(0.940616608, -0.0218617916, 51.6155777, 0.231713966, 0.972783983, 0, 0, 0, 1, 0.972783983, -0.231713966, 0), 
+						CFrame.new(0.921867371, -0.730280638, 51.7416077, 1, 0, 0, 0, 0.986816168, -0.161844969, 0, 0.161844969, 0.986816168), 
+						CFrame.new(0.921867371, -0.582880735, 51.7658005, 1, 0, 0, 0, 0.986817896, -0.161845312, 0, 0.161845312, 0.986817896), 
+						CFrame.new(-0.695835114, -0.901750326, 45.6719093, 0, 1, 0, 0.0891725421, 0, 0.996016264, 0.996016264, 0, -0.0891725421)
+					}
+
+					local VFXPart = RS.Jun["No More Games"].VFXPart:Clone()
+					VFXPart.Parent = workspace.FX
+					local weld1 = Instance.new("ManualWeld",VFXPart)
+					weld1.Name = "VFX"
+					weld1.Part0 = char.Torso
+					weld1.Part1 = VFXPart
+					weld1.C0 = CFrame.new(0,0,0)
+					game.Debris:AddItem(VFXPart, 17.2)
+					
+					
+					local RootPart1 = v.Parent.HumanoidRootPart
+					local RootPart2 = v.Parent.Humanoid
+					local Player = humanoid:LoadAnimation(script.Player)
+					local Enemy = RootPart2:LoadAnimation(script.Victim)
+					local CamP = char.Cameras.NoMoreGamesP
+					local CamE = v.Parent.Cameras.NoMoreGamesE
+					Player:Play()
+					Enemy:Play()
+
+					spawn(function() -- Camera
+						CamP.Enabled = true
+						CamE.Enabled = true
+						task.wait(16.4)
+						CamE.Enabled = false
+						CamP.Enabled = false
+					end)
+
+					Stun2.Parent = char
+					Stun2.Enabled = true
+					Stun.Parent = v.Parent
+					Stun.Enabled = true
+
+					local HitSound = script.Sound:Clone()
+					HitSound.Parent = hrp.Parent.Torso
+					HitSound:Play()
+					game.Debris:AddItem(HitSound, 23)
+
+					spawn(function() -- Player
+						wait(17)
+						
+						hrp.Anchored = false
+						hrp.CFrame = hrp.CFrame * CFrame.new(0,0,70)
+						Stun2:Destroy()
+
+						wait(.2)
+						UnStun2.Parent = char
+						UnStun2.Enabled = true
+						wait(1)
+						UnStun2:Destroy()
+					end)
+
+					spawn(function() -- Enemy
+						wait(15.5)
+
+						RootPart1.Anchored = false
+						local vel = Instance.new("BodyVelocity")
+						vel.MaxForce = Vector3.new(1,1,1.5) * 1000000;
+						vel.Parent = v.Parent.Torso
+						vel.Velocity = Vector3.new(1,2,2)  * v.Parent:WaitForChild("HumanoidRootPart").CFrame.LookVector * 160 + hrp.CFrame.UpVector * 60
+						vel.Name  =  "SmallMoveVel"
+						game.Debris:AddItem(vel,0.3)
+						RootPart1.CFrame = hrp.CFrame * CFrame.new(0,0,70) * CFrame.Angles(0,math.rad(180),0)
+						v.Parent.Humanoid:TakeDamage(FinalDamage)
+						require(RS.Modules.ragdoll).Enable(v.Parent,RagdollTime)
+						Stun:Destroy()	
+
+						wait(.2)
+						UnStun.Parent = v.Parent
+						UnStun.Enabled = true
+						wait(1)
+						UnStun:Destroy()
+					end)
+
+					spawn(function() -- Rib ImpactFrame
+						task.wait(12.7)
+						local impactframes2 = script.Parent.ImpactFrame2:Clone()
+						impactframes2.Parent = char
+						impactframes2.Enabled = true
+						local impasctframes2 = script.Parent.ImpasctFrame2:Clone()
+						impasctframes2.Parent = v.Parent
+						impasctframes2.Enabled = true
+						spawn(function()
+							wait(2.7)
+							impactframes2.Enabled = false
+							impactframes2:Destroy()
+							impasctframes2.Enabled = false
+							impasctframes2:Destroy()
+						end)
+					end)
+
+					RootPart1.CFrame = hrp.CFrame * CFrame.new(0,0,-3) * CFrame.Angles(0,math.rad(180),0)
+					humanoid.AutoRotate = false
+					RootPart2.AutoRotate = false
+					hrp.Anchored = true
+					RootPart1.Anchored = true
+
+					spawn(function()
+
+						task.delay(2.967, function()
+							local victimGround = RS.Jun["No More Games"].VictimFall:Clone()
+							victimGround.Parent = workspace.FX
+							victimGround.CFrame = hrp.CFrame
+							ParticlesModule.Emit(victimGround)
+							game.Debris:AddItem(victimGround,7)
+						end)
+
+						task.delay(4.333, function()
+							local eyeFlash1 = RS.Jun["No More Games"].EyeFlash.Attachment1:Clone()
+							local eyeFlash2 = RS.Jun["No More Games"].EyeFlash.Attachment2:Clone()
+
+							eyeFlash1.Parent, eyeFlash2.Parent = char.Head, char.Head
+							eyeFlash1.CFrame = eyeFlash1.CFrame * CFrame.new(0,.3,0)
+							eyeFlash2.CFrame = eyeFlash2.CFrame * CFrame.new(0,.3,0)
+							game.Debris:AddItem(eyeFlash1, 5)
+							game.Debris:AddItem(eyeFlash2, 5)
+
+							task.wait(.767)
+
+							ParticlesModule.Enabled(eyeFlash1, false)
+							ParticlesModule.Enabled(eyeFlash2, false)
+						end)
+
+						task.delay(7.65, function()
+							local dodge = RS.Jun["No More Games"].Dodge:Clone()
+							dodge.Parent = workspace.FX
+							dodge.CFrame = hrp.CFrame * CFrame.new(0.104, -0.167, 16.649)
+							ParticlesModule.EnabledV2(dodge, .05)
+							game.Debris:AddItem(dodge, 2)
+						end)
+
+						task.delay(7.883, function()
+							local clawTrail = RS.Jun["No More Games"].ClawHandTrail:Clone()
+							clawTrail.Parent = workspace.FX
+							clawTrail.Weld.Part0 = char['Right Arm']
+							ParticlesModule.EnableTrail(clawTrail, true)
+							game.Debris:AddItem(clawTrail, 1)
+
+							task.wait(.167)
+
+							ParticlesModule.EnableTrail(clawTrail, false)
+						end)
+
+						task.delay(10.817, function()							
+							local effect: Part = RS.Jun["No More Games"].Release:Clone()
+							effect.Parent = workspace.FX
+							effect.CFrame = RootPart1.CFrame * CFrame.new(0.06, -0.089, -55.934)
+							
+							spawn(function()
+								for i, v in pairs(effect:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = true
+									end
+								end
+								
+								task.wait(.05)
+								
+								for i, v in pairs(effect:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = false
+									end
+								end
+							end)
+							game.Debris:AddItem(effect, 5)
+						end)
+
+						task.delay(11.333, function()
+							local replay2 = RS.Jun["No More Games"].Replay2:Clone()
+							replay2.CFrame = CFrame.lookAlong(v.Parent.Torso.Position, -hrp.CFrame.LookVector)
+							replay2.Parent = workspace.FX
+							ParticlesModule.Emit(replay2)
+							game.Debris:AddItem(replay2, 5)
+						end)
+
+						task.delay(11.633, function()
+							local release2 = RS.Jun["No More Games"].Release2:Clone()
+							release2.CFrame = RootPart1.CFrame * CFrame.new(0.104, -0.167, -60.649)
+							release2.Parent = workspace.FX
+							ParticlesModule.Emit(release2)
+							game.Debris:AddItem(release2, 7)
+						end)
+						
+						task.delay(11.633, function()							
+							local effect: Part = RS.Jun["No More Games"].Release2:Clone()
+							effect.Parent = workspace.FX
+							effect.CFrame = RootPart1.CFrame * CFrame.new(0.104, -0.167, -60.649)
+
+							spawn(function()
+								for i, v in pairs(effect:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = true
+									end
+								end
+
+								task.wait(.05)
+
+								for i, v in pairs(effect:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = false
+									end
+								end
+							end)
+							game.Debris:AddItem(effect, 5)
+						end)
+						
+						task.delay(13.267, function()
+							local effect2: Part = RS.Jun["No More Games"].Release2:Clone()
+							effect2.Parent = workspace.FX
+							effect2.CFrame = RootPart1.CFrame * CFrame.new(-0.008, -0.16, -68.028)
+							spawn(function()
+								for i, v in pairs(effect2:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = true
+									end
+								end
+
+								task.wait(.05)
+
+								for i, v in pairs(effect2:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = false
+									end
+								end
+							end)
+							game.Debris:AddItem(effect2, 5)
+						end)
+
+						
+
+						task.delay(12.667, function()
+							local effect1: Part = RS.Jun["No More Games"].Replay3:Clone()
+							effect1.Parent = workspace.FX
+							effect1.CFrame = CFrame.lookAlong(v.Parent.Torso.Position, -hrp.CFrame.LookVector)
+							
+							spawn(function()
+								for i, v in pairs(effect1:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = true
+									end
+								end
+
+								task.wait(.05)
+
+								for i, v in pairs(effect1:GetDescendants()) do
+									if v:IsA("ParticleEmitter") then
+										v.Enabled = false
+									end
+								end
+							end)
+							game.Debris:AddItem(effect1, 5)
+						end)
+					end)
+
+					task.delay(6.467, function()
+						local fightSequenceContact = RS.Jun["No More Games"].FightSequenceContact.Contact:Clone()
+						fightSequenceContact.Parent = RootPart1.Parent['Left Arm']
+						ParticlesModule.Emit(fightSequenceContact)
+						game.Debris:AddItem(fightSequenceContact, 2)
+					end)
+
+					task.delay(6.767, function()
+						local torsoPos: Vector3 = char.Torso.Position
+
+						local fightSequenceContact = RS.Jun["No More Games"].FightSequenceContact.Contact:Clone()
+						fightSequenceContact.Parent = RootPart1.Parent['Right Arm']
+						ParticlesModule.Emit(fightSequenceContact)
+						game.Debris:AddItem(fightSequenceContact, 2)
+
+						local fightSequenceDust = RS.Jun["No More Games"].FightSequenceDust:Clone()
+						fightSequenceDust.CFrame = CFrame.lookAlong(Vector3.new(torsoPos.X, hrp.Position.Y - 3, torsoPos.Z), -hrp.CFrame.LookVector)
+						fightSequenceDust.Parent = workspace.FX
+						ParticlesModule.Emit(fightSequenceDust)
+						game.Debris:AddItem(fightSequenceContact, 5)
+					end)
+
+					task.delay(7.067, function()
+						local fightSequenceContact = RS.Jun["No More Games"].FightSequenceContact.Contact:Clone()
+						fightSequenceContact.Parent = char['Right Arm']
+						ParticlesModule.Emit(fightSequenceContact)
+						game.Debris:AddItem(fightSequenceContact, 2)
+					end)
+
+					task.delay(7.35, function()
+						local fightSequenceContact = RS.Jun["No More Games"].FightSequenceContact.Contact:Clone()
+						fightSequenceContact.Parent = char['Left Arm']
+						ParticlesModule.EnabledV2(fightSequenceContact, .1)
+						game.Debris:AddItem(fightSequenceContact, 2)
+					end)
+
+					task.delay(7.533, function()
+						local fightSequenceContact = RS.Jun["No More Games"].FightSequenceContact.Contact:Clone()
+						fightSequenceContact.Parent = RootPart1.Parent['Left Arm']
+						ParticlesModule.Emit(fightSequenceContact)
+						game.Debris:AddItem(fightSequenceContact, 2)
+					end)
+					
+					local function triggerVisibility(value)
+						for _,v: Part? in workspace:GetPartBoundsInRadius(char.Torso.Position, 100) do
+							if not v:IsDescendantOf(workspace.Map) then continue end
+
+							if v.Transparency and typeof(v.Transparency) == 'number' and ((value == false and v.Transparency < 1) or value == true) then
+								if value == true then
+									v.Transparency = v:GetAttribute('NMGOldT') or 0
+								else
+									v.Transparency = 1
+								end
+							end
+						end
+					end
+					
+					local nextIndex = 1
+					for Index, ClawTime in ClawTimes do
+						task.delay(ClawTime, function()
+							task.spawn(triggerVisibility, false)
+
+							local blackHighlightUser = RS.Jun["No More Games"].blackHighlight:Clone()
+							blackHighlightUser.Parent = char
+
+							local blackHighlightVictim = RS.Jun["No More Games"].blackHighlight:Clone()
+							blackHighlightVictim.Parent = v.Parent
+
+
+							local currCF = hrp.CFrame
+
+							local RedBackground = RS.Jun["No More Games"].RedBackground:Clone()
+							RedBackground.Parent = workspace.FX
+							RedBackground.CFrame = currCF * offsets[nextIndex]
+
+							local Emit: Part = RS.Jun["No More Games"]['Emit'..tostring(Index)]:Clone()
+							Emit.Parent = workspace.FX
+							Emit.CFrame = currCF * offsets[nextIndex + 1]
+							ParticlesModule.Emit(Emit)
+							game.Debris:AddItem(Emit, 1)
+
+							local Claw: Part = RS.Jun["No More Games"]['Claw'..tostring(Index)]:Clone()
+							Claw.Parent = workspace.FX
+							Claw.CFrame = currCF * offsets[nextIndex + 2]
+
+							local ClawDecal: Part = RS.Jun["No More Games"]['ClawDecal'..tostring(Index)]:Clone()
+							ClawDecal.Parent = workspace.FX
+							ClawDecal.CFrame = currCF * offsets[nextIndex + 3]
+
+							nextIndex = nextIndex + 4
+
+							local ExtraClaw
+							if Index == 10 then
+								ExtraClaw = RS.Jun["No More Games"].Claw10Extra:Clone()
+								ExtraClaw.Parent = workspace.FX
+								ExtraClaw.CFrame = currCF * offsets[40]
+
+								for _,v in Claw:GetDescendants() do
+									if v:IsA('Beam') then
+										TweenService:Create(v, TweenInfo.new(0.3333333333333333, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), { Width1 = 0; }):Play()	
+									end
+								end
+
+								for _,v in ExtraClaw:GetDescendants() do
+									if v:IsA('Beam') then
+										TweenService:Create(v, TweenInfo.new(0.3333333333333333, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), { Width1 = 0; }):Play()	
+									end
+								end
+							end
+
+
+							if Claw.Name == 'Claw10' then
+								task.wait(.367)
+							else
+								task.wait(.05)
+							end
+
+							blackHighlightUser:Destroy()
+							blackHighlightVictim:Destroy()
+							Claw:Destroy()
+							ClawDecal:Destroy()
+							if ExtraClaw then ExtraClaw:Destroy() end
+							RedBackground:Destroy()
+
+							task.spawn(triggerVisibility, true)
+						end)
+					end
+
+					Player:GetMarkerReachedSignal("VictimSlam"):Connect(function()
+						local effect1 = RS.Jun["No More Games"].VictimFall:Clone()
+						effect1.Parent = workspace.FX
+						effect1.CFrame = hrp.CFrame * CFrame.new(0,0,5)
+
+						spawn(function()
+							for i, v in pairs(effect1.Fall:GetDescendants()) do
+								if v:IsA("ParticleEmitter") then
+									v:Emit(v:GetAttribute("EmitCount"))
+								end
+							end
+						end)
+						game.Debris:AddItem(effect1,2)
+					end)
+
+					Player:GetMarkerReachedSignal("KneeContact"):Connect(function()
+						local effect1 = RS.Jun["No More Games"].KneeContact.Knee.Attachment:Clone()
+						effect1.Parent = v.Parent.Head
+						for i,v in pairs(effect1:GetDescendants()) do
+							if v:IsA("ParticleEmitter") then
+								v:Emit(v:GetAttribute("EmitCount"))
+							end
+						end
+						game.Debris:AddItem(effect1,4)
+
+						local effect2 = RS.Jun["No More Games"].KneeContact.Knee.Attachment.Attachment:Clone() -- Attachment
+						effect2.Parent = v.Parent.Head
+						for i,v in pairs(effect2:GetDescendants()) do
+							if v:IsA("ParticleEmitter") then
+								v:Emit(v:GetAttribute("EmitCount"))
+							end
+						end
+						game.Debris:AddItem(effect2,4)
+					end)
+
+					Player:GetMarkerReachedSignal("Sequence"):Connect(function()
+						local impactframes = script.Parent.ImpactFrame:Clone()
+						impactframes.Parent = char
+						impactframes.Enabled = true
+						local impasctframes = script.Parent.ImpasctFrame:Clone()
+						impasctframes.Parent = v.Parent
+						impasctframes.Enabled = true
+						spawn(function()
+							wait(2.7)
+							impactframes.Enabled = false
+							impactframes:Destroy()
+							impasctframes.Enabled = false
+							impasctframes:Destroy()
+						end)
+					end)
+					
+					task.delay(10.817, function()
+						local release = RS.Jun["No More Games"].Release:Clone()
+						release.CFrame = RootPart1.CFrame * CFrame.new(0.06, -0.089, -55.934)
+						release.Parent = workspace.FX
+						ParticlesModule.Emit(release)
+						game.Debris:AddItem(release, 7)
+
+
+						local blackBackground = RS.Jun["No More Games"].BlackBackground:Clone()
+						local emit11 = RS.Jun["No More Games"].Emit11:Clone()
+						local clawDecal11 = RS.Jun["No More Games"].ClawDecal11:Clone()
+
+						local mainCFrame = hrp.CFrame
+
+
+						blackBackground.CFrame = mainCFrame * offsets[37]
+						emit11.CFrame = mainCFrame * offsets[38]
+						clawDecal11.CFrame = mainCFrame * offsets[41]
+
+						local userHighlight = Instance.new("Highlight")
+						userHighlight.FillTransparency = 0
+						userHighlight.OutlineTransparency = 1
+						userHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+
+						local enemyHighlight = Instance.new("Highlight")
+						enemyHighlight.FillTransparency = 0
+						enemyHighlight.OutlineTransparency = 1
+						enemyHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+
+						blackBackground.Parent = workspace.FX
+						clawDecal11.Parent = workspace.FX
+						emit11.Parent = workspace.FX
+
+						ParticlesModule.Emit(emit11)
+
+						enemyHighlight.Parent = v.Parent
+						userHighlight.Parent = char
+						userHighlight.Parent = char
+
+						game.Debris:AddItem(blackBackground, .04)
+						game.Debris:AddItem(emit11, .04)
+						game.Debris:AddItem(clawDecal11, .04)
+						game.Debris:AddItem(userHighlight, .04)
+						game.Debris:AddItem(enemyHighlight, .04)
+					end)
+					
+					task.delay(11.967, function()
+						local blackBackground2 = RS.Jun["No More Games"].BlackBackground2:Clone()
+						local textVFX = RS.Jun["No More Games"].Text:Clone()
+						local mainCF = hrp.CFrame
+
+						blackBackground2.CFrame = mainCF * CFrame.new(0.026260376, 4.11506844, 54.3320885)
+						textVFX.CFrame = mainCF * CFrame.new(0.060962677, 1.18269944, 54.59729)
+
+						blackBackground2.Parent = workspace.FX
+						textVFX.Parent = workspace.FX	
+
+						TweenService:Create(blackBackground2, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+							Transparency = 0.3
+						}):Play()
+
+						ParticlesModule.EnabledV2(textVFX, .8)
+
+						game.Debris:AddItem(blackBackground2, .55)
+						game.Debris:AddItem(textVFX, 2)
+					end)
+
+					local mainCF
+					task.delay(15.583, function()
+						mainCF = CFrame.lookAlong(char.Torso.Position, -hrp.CFrame.LookVector)
+
+						local finalImpact = RS.Jun["No More Games"].FinalImpact:Clone()
+						finalImpact.CFrame = hrp.CFrame * CFrame.new(0, 0, 35) * CFrame.Angles(0, rad(180), 0)
+						finalImpact.Parent = workspace.FX
+						ParticlesModule.Emit(finalImpact)
+						game.Debris:AddItem(finalImpact, 10)
+						
+						local FinalImpactSound = script.FinalImpact:Clone()
+						FinalImpactSound.Parent = finalImpact
+						FinalImpactSound:Play()
+						game.Debris:AddItem(FinalImpactSound, 6)
+
+						local beamWinds = RS.Jun["No More Games"].BeamWinds:Clone()
+						beamWinds.CFrame = hrp.CFrame * CFrame.new(0, 0, -10)
+						beamWinds.Parent = workspace.FX
+						for _,v in beamWinds.Beams:GetChildren() do
+							if v:IsA('Beam') then
+								TweenService:Create(v, TweenInfo.new(2.35), { TextureSpeed = .1; Brightness = 0; }):Play()
+							end
+						end
+						game.Debris:AddItem(beamWinds, 2.35)
+
+						local lines = RS.Jun["No More Games"].Lines:Clone()
+						lines.CFrame = hrp.CFrame * CFrame.new(0, 10, 55) * CFrame.Angles(0, rad(180), 0)
+						lines.Parent = workspace.FX
+						task.delay(2.35, function()
+							ParticlesModule.Enabled(lines, false)
+						end)
+						game.Debris:AddItem(lines, 10)
+
+						local meshGroup = RS.Jun["No More Games"].MeshGroup:Clone()
+						meshGroup.Primary.CFrame = hrp.CFrame * CFrame.new(0, 0, 35)
+						meshGroup.Parent = workspace.FX
+						game.Debris:AddItem(meshGroup, 1)
+						for _,v in meshGroup:GetChildren() do
+							if v == meshGroup.PrimaryPart then continue end
+
+							v.CFrame = meshGroup.Primary.CFrame * v:GetAttribute('Offset')
+						end
+
+						TweenService:Create(meshGroup.Wind2.Mesh, TweenInfo.new(.25), { Scale = Vector3.new(2.266, 0, 0); }):Play()
+						TweenService:Create(meshGroup.Wind2, TweenInfo.new(.25), { Transparency = 1 }):Play()	
+
+						TweenService:Create(meshGroup.Swirls, TweenInfo.new(.25), { Transparency = 1; Size = meshGroup.Swirls.Size * 2; Orientation = meshGroup.Swirls.Orientation + Vector3.new(90, 0, 0); }):Play()
+
+						TweenService:Create(meshGroup['3'], TweenInfo.new(.25), { Size = meshGroup['3'].Size * 2; Transparency = 1; Orientation = meshGroup['3'].Orientation + Vector3.new(90, 0, 0);  }):Play()
+
+						TweenService:Create(meshGroup.Circle, TweenInfo.new(.25), { Size = meshGroup.Circle.Size * 2; Transparency = 1; }):Play()
+						TweenService:Create(meshGroup.Circle2, TweenInfo.new(.25), { Size = meshGroup.Circle2.Size * 2; Transparency = 1; }):Play()
+
+						task.spawn(function()
+							local beanWind = meshGroup.BeanWind
+							local flipBookFolder = beanWind.Flip
+							local lastFrame
+
+							TweenService:Create(beanWind.Mesh, TweenInfo.new(.5), { Scale = beanWind.Mesh.Scale * 2 }):Play()
+							for i = 1, 11 do
+								local currentFrame = flipBookFolder[tostring(i)]
+								currentFrame.Parent = beanWind
+
+								if lastFrame then
+									lastFrame:Destroy()
+								end
+
+								lastFrame = currentFrame
+
+								task.wait(0.04545)
+							end
+						end)
+						
+					end)
+					
+					task.delay(16.2, function()
+						local kanji1 = RS.Jun["No More Games"].Kanji1:Clone()
+						kanji1.CFrame = hrp.CFrame * CFrame.new(0, 12, 80)
+						kanji1.Parent = workspace.FX
+						task.delay(0, function()
+							ParticlesModule.Enabled(kanji1, true)
+							task.wait(.25)
+							ParticlesModule.Enabled(kanji1, false)
+						end)
+						game.Debris:AddItem(kanji1, 5)
+						local KenjiSound = script.Kanji:Clone()
+						KenjiSound.Parent = kanji1
+						KenjiSound:Play()
+						game.Debris:AddItem(KenjiSound, 3)
+
+						task.wait(.15)
+
+						local kanji2 = RS.Jun["No More Games"].Kanji2:Clone()
+						kanji2.CFrame = hrp.CFrame * CFrame.new(0, 12, 80)
+						kanji2.Parent = workspace.FX
+						task.delay(0, function()
+							ParticlesModule.Enabled(kanji2, true)
+							task.wait(.25)
+							ParticlesModule.Enabled(kanji2, false)
+						end)
+						game.Debris:AddItem(kanji2, 5)
+
+						task.wait(.15)
+
+						local kanji3 = RS.Jun["No More Games"].Kanji3:Clone()
+						kanji3.CFrame = hrp.CFrame * CFrame.new(0, 12, 80)
+						kanji3.Parent = workspace.FX
+						task.delay(0, function()
+							ParticlesModule.Enabled(kanji3, true)
+							task.wait(.25)
+							ParticlesModule.Enabled(kanji3, false)
+						end)
+						game.Debris:AddItem(kanji3, 5)
+
+						task.wait(.15)
+
+						local kanji4 = RS.Jun["No More Games"].Kanji4:Clone()
+						kanji4.CFrame = hrp.CFrame * CFrame.new(0, 12, 80)
+						kanji4.Parent = workspace.FX
+						task.delay(0, function()
+							ParticlesModule.Enabled(kanji4, true)
+							task.wait(.25)
+							ParticlesModule.Enabled(kanji4, false)
+						end)
+						game.Debris:AddItem(kanji4, 10)
+					end)
+
+					Player:GetMarkerReachedSignal("EndSequence"):Connect(function()
+						local knee = RS.Jun["No More Games"].Knee:Clone()
+						knee.Parent = workspace.FX
+						knee.CFrame = v.Parent.Torso.CFrame
+						ParticlesModule.EnabledV2(knee, .1)
+						game.Debris:AddItem(knee,5)
+
+						spawn(function()
+							task.wait(0.3)
+							local effect1 = RS.Jun["No More Games"].GroundSlam.WindAndDust:Clone()
+							effect1.Parent = v.Parent.Torso
+							for i,v in pairs(effect1:GetDescendants()) do
+								if v:IsA("ParticleEmitter") then
+									v:Emit(v:GetAttribute("EmitCount"))
+								end
+							end
+							game.Debris:AddItem(effect1,4)
+						end)
+
+						spawn(function()
+							task.wait(3.9)
+							local effect1 = RS.Jun["No More Games"].FightSequenceContact:Clone()
+							effect1.Parent = hrp
+							effect1.CFrame = hrp.CFrame * CFrame.new(0,0,22)
+							for i, v in pairs(effect1:GetDescendants()) do
+								if v:IsA("ParticleEmitter") then
+									v:Emit(v:GetAttribute("EmitCount"))
+									wait(.1)
+									v:Emit(v:GetAttribute("EmitCount"))
+									wait(.2)
+									v:Emit(v:GetAttribute("EmitCount"))
+								end
+							end
+							game.Debris:AddItem(effect1,2)
+						end)
+
+						task.wait(1.6)
+
+						local HandAura = RS.Jun["No More Games"].HandAura:Clone()
+						HandAura.Parent = char["Right Arm"]
+						HandAura.CFrame = char["Right Arm"].CFrame * CFrame.new(0,0,0)
+
+						local weld1 = Instance.new("ManualWeld",HandAura)
+						weld1.Name = ""
+						weld1.Part0 = char["Right Arm"]
+						weld1.Part1 = HandAura
+						weld1.C0 = CFrame.new(0,0,0)
+
+						spawn(function()
+							for i,v in pairs(HandAura.Glare:GetDescendants()) do
+								if v:IsA("ParticleEmitter") then
+									v:Emit(1)
+								end
+							end
+						end)
+						game.Debris:AddItem(HandAura,.8)
+
+						task.wait(.7)
+						for i,v in pairs(VFXPart.Stance:GetDescendants()) do
+							if v:IsA("ParticleEmitter") then
+								v:Emit(v:GetAttribute("EmitCount"))
+							end
+						end
+						local effect2 = RS.Jun["No More Games"].Stance:Clone()
+						effect2.Parent = VFXPart
+						effect2.CFrame = VFXPart.CFrame * CFrame.new(0,0,0)
+						game.Debris:AddItem(effect2,2)
+
+						local weld1 = Instance.new("ManualWeld",effect2.Stance)
+						weld1.Name = "VFX"
+						weld1.Part0 = VFXPart
+						weld1.Part1 = effect2
+						weld1.C0 = VFXPart.CFrame
+
+					end)
+				end
+			end
+		end
+	end)
+	Grab:GetMarkerReachedSignal("Grab"):Connect(function()
+		task.wait(1)
+		humanoid.AutoRotate = true
+		hitbox:Destroy()
+		vel:Destroy()
+	end)
+end)
