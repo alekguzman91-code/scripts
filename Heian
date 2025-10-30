@@ -1,0 +1,585 @@
+local RS = game:GetService("ReplicatedStorage")
+local Effects = RS:WaitForChild("Effects")
+local HeianSukuna = Effects:WaitForChild("HeianSukuna")
+local Anims = RS:WaitForChild("Anims")
+local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local StunA1 = require(RS.Effects.HeianSukuna.HitService.StunHandlerV2)
+local LocalPlayer = Players.LocalPlayer
+local CurrentCamera = workspace.CurrentCamera
+
+local var774 = nil
+
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	if not char then return end
+	local humanoid = char:FindFirstChild("Humanoid")
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not hrp or humanoid.Health <= 0 then return end
+
+	local AnimRandom = humanoid:LoadAnimation(script.Anim)
+	AnimRandom:Play()
+
+
+	local Stun = script.Parent.Stun:Clone()
+	local UnStun = script.Parent.UnStun:Clone()
+
+	local sound = script.Sound
+	sound:Play()
+	spawn(function()
+		local Camera = script.Camera:Clone()
+		Camera.Parent = char
+		Camera.Enabled = true
+		wait(8)
+		local Camera = script.CameraStop:Clone()
+		Camera.Parent = char
+		Camera.Enabled = true
+	end)	
+	
+	local function domainFov()
+		CurrentCamera.FieldOfView = 40
+		task.delay(5.65, function()
+			local fovTween = TweenService:Create(CurrentCamera, TweenInfo.new(1/60), {FieldOfView = 60})
+			fovTween:Play()
+		end)
+		task.delay(8.9, function()
+			local fovTween = TweenService:Create(CurrentCamera, TweenInfo.new(0.16666666666666666), {FieldOfView = 80})
+			fovTween:Play()
+		end)
+		task.delay(9.066666666666666, function()
+			local fovTween = TweenService:Create(CurrentCamera, TweenInfo.new(0.1), {FieldOfView = 50})
+			fovTween:Play()
+		end)
+		task.delay(10.3, function()
+			local fovTween = TweenService:Create(CurrentCamera, TweenInfo.new(0.3), {FieldOfView = 70})
+			fovTween:Play()
+		end)
+	end
+
+	local function domainColorCorrect()
+		local colorCorrection = Instance.new("ColorCorrectionEffect")
+		colorCorrection.Brightness = 0
+		colorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+		colorCorrection.Saturation = 0
+		colorCorrection.Contrast = 0
+		colorCorrection.Parent = Lighting
+		Debris:AddItem(colorCorrection, 23.333333333333332)
+
+		task.delay(1.3333333333333333, function()
+			local tween = TweenService:Create(colorCorrection, TweenInfo.new(7), {TintColor = Color3.fromRGB(255, 0, 0)})
+			tween:Play()
+		end)
+		task.delay(1.45, function()
+			local tween = TweenService:Create(colorCorrection, TweenInfo.new(48), {TintColor = Color3.fromRGB(255, 255, 255)})
+			tween:Play()
+		end)
+		task.delay(10.483333333333333, function()
+			local tween1 = TweenService:Create(colorCorrection, TweenInfo.new(1), {TintColor = Color3.fromRGB(255, 255, 255)})
+			local tween2 = TweenService:Create(colorCorrection, TweenInfo.new(1), {Brightness = -0.2})
+			local tween3 = TweenService:Create(colorCorrection, TweenInfo.new(1), {Contrast = 0.2})
+			local tween4 = TweenService:Create(colorCorrection, TweenInfo.new(1), {Saturation = -1})
+			tween1:Play()
+			tween2:Play()
+			tween3:Play()
+			tween4:Play()
+		end)
+		task.delay(20.483333333333334, function()
+			local tween1 = TweenService:Create(colorCorrection, TweenInfo.new(59), {Contrast = 0})
+			local tween2 = TweenService:Create(colorCorrection, TweenInfo.new(59), {Brightness = 0})
+			local tween3 = TweenService:Create(colorCorrection, TweenInfo.new(59), {Saturation = 0})
+			tween1:Play()
+			tween2:Play()
+			tween3:Play()
+		end)
+	end
+
+	local function domainHighlight()
+		local Highlight = Instance.new("Highlight")
+		Highlight.FillTransparency = 0
+		Highlight.OutlineTransparency = 0
+		Highlight.FillColor = Color3.fromRGB(0, 0, 0)
+		Highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+		Highlight.Parent = char
+
+		task.delay(0.5, function()
+			local tween = TweenService:Create(Highlight, TweenInfo.new(1.3833333333333333), {
+				FillTransparency = 1,
+				OutlineTransparency = 1
+			})
+			tween:Play()
+		end)
+		Debris:AddItem(Highlight, 5)
+	end
+
+spawn(function()
+	local vell = Instance.new("BodyVelocity")
+	vell.MaxForce = Vector3.new(1, 1, 1) * 1000000
+	vell.Velocity = Vector3.new(0, 0, 0)
+	vell.Parent = hrp
+	vell.Name = "SmallMoveVel"
+
+	wait(12) -- waiting for effect duration in original script
+
+	-- Damage logic
+	local Slashes = RS.Effects.HeianSukuna.Slashes:Clone()
+	Slashes.CFrame = hrp.CFrame * CFrame.new(0, 0.5, 0)
+
+	for i = 1, 300 do
+		task.wait(0.1)
+		local hitcontent = workspace:GetPartBoundsInBox(Slashes.CFrame, Vector3.new(420, 128, 420))
+		local hitlist = {}
+
+		if humanoid.Health <= 0 or char.Parent == nil then
+			Stun.Enabled = false
+			UnStun.Parent = char
+			UnStun.Enabled = true
+
+			hrp.Anchored = false
+			humanoid.AutoRotate = true
+
+			vell:Destroy()
+			Slashes:Destroy()
+			break
+		end
+
+		for _, v in pairs(hitcontent) do
+			if v.Parent:FindFirstChild("Humanoid") and v.Parent ~= char and not v.Parent.HumanoidRootPart.Anchored then
+				if not hitlist[v.Parent.Humanoid] then
+					hitlist[v.Parent.Humanoid] = true
+					v.Parent.Humanoid:TakeDamage(1)
+					StunA1.Stun(v.Parent.Humanoid, 0.75)
+				end
+			end
+		end
+	end
+	end)
+	local function DomainCamera()
+		if humanoid.Health <= 0 then return end
+
+		local clone = HeianSukuna:FindFirstChild("cammmm"):Clone()
+		clone.Parent = workspace.Effects
+
+		domainFov()
+		domainColorCorrect()
+
+		local NormalDepthField = Lighting:FindFirstChild("NormalDepthField")
+		if NormalDepthField then
+			NormalDepthField.FocusDistance = 3
+			task.delay(10.6, function()
+				local tween = TweenService:Create(NormalDepthField, TweenInfo.new(0.25), {FocusDistance = 200})
+				tween:Play()
+			end)
+		end
+
+		local offset = CFrame.new(0, -2.98, 0)
+		clone:PivotTo(hrp.CFrame * offset)
+
+		for _, v in pairs(clone:GetDescendants()) do
+			if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB" then
+				task.spawn(function()
+					v.Enabled = true
+				end)
+			end
+		end
+
+		task.delay(1.0833333333333333, function()
+			for _, v in pairs(clone:GetDescendants()) do
+				if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB" then
+					task.spawn(function()
+						v.Enabled = false
+					end)
+				end
+			end
+		end)
+
+		task.delay(1.3666666666666667, function()
+			local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect")
+			ColorCorrectionEffect.Saturation = -1
+			ColorCorrectionEffect.Contrast = -3
+			ColorCorrectionEffect.Parent = Lighting
+
+			task.delay(0.04, function()
+				ColorCorrectionEffect.Saturation = -1
+				ColorCorrectionEffect.Contrast = 3
+				task.wait(0.07)
+				ColorCorrectionEffect:Destroy()
+			end)
+		end)
+
+		task.delay(2.4166666666666665, function()
+			for _, v in pairs(clone:GetDescendants()) do
+				if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB" then
+					task.spawn(function()
+						v.Enabled = true
+					end)
+				end
+			end
+		end)
+
+		task.delay(5.583333333333333, function()
+			for _, v in pairs(clone:GetDescendants()) do
+				if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB" then
+					task.spawn(function()
+						v.Enabled = false
+					end)
+				end
+				if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB2" then
+					v.Enabled = true
+				end
+			end
+		end)
+
+		task.delay(7.266666666666667, function()
+			local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect")
+			ColorCorrectionEffect.Saturation = -1
+			ColorCorrectionEffect.Contrast = -3
+			ColorCorrectionEffect.Parent = Lighting
+
+			task.delay(0.04, function()
+				ColorCorrectionEffect.Saturation = -1
+				ColorCorrectionEffect.Contrast = 3
+				task.wait(0.07)
+				ColorCorrectionEffect:Destroy()
+			end)
+		end)
+
+		task.delay(9.083333333333334, function()
+			local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect")
+			ColorCorrectionEffect.Saturation = -1
+			ColorCorrectionEffect.Contrast = -3
+			ColorCorrectionEffect.Parent = Lighting
+
+			task.delay(0.04, function()
+				ColorCorrectionEffect.Saturation = -1
+				ColorCorrectionEffect.Contrast = 3
+				task.wait(0.07)
+				ColorCorrectionEffect:Destroy()
+			end)
+		end)
+
+		task.delay(10.333333333333334, function()
+			for _, v in pairs(clone:GetDescendants()) do
+				if v:IsA("ParticleEmitter") and v.Parent.Name == "KOB2" then
+					v.Enabled = false
+				end
+			end
+			for _, v in pairs(clone.SlashScreen:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v.Enabled = true
+				end
+			end
+		end)
+
+		task.delay(10.35, function()
+			local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect")
+			ColorCorrectionEffect.Saturation = -1
+			ColorCorrectionEffect.Contrast = -3
+			ColorCorrectionEffect.Parent = Lighting
+
+			task.delay(0.04, function()
+				ColorCorrectionEffect.Saturation = -1
+				ColorCorrectionEffect.Contrast = 3
+				task.wait(0.09)
+				ColorCorrectionEffect:Destroy()
+			end)
+		end)
+
+		local var875 = 1
+		task.delay(12.25, function()
+			var875 = 2
+		end)
+		task.delay(15.05, function()
+			var875 = 3
+		end)
+
+		
+		task.spawn(function()
+			while clone and var875 ~= 3 and humanoid.Health > 0 do
+				task.wait()
+				if humanoid.Health <= 0 then break end
+				if var875 == 1 then
+					CurrentCamera.CFrame = clone.camera.CFrame
+				else
+					if not var774 then return end
+					CurrentCamera.CFrame = var774.CFrame
+				end
+			end
+			CurrentCamera.CameraType = Enum.CameraType.Custom
+			if clone then
+				clone:Destroy()
+			end
+		end)
+	end
+
+	local function HeianDomainEffect()
+		local clone = HeianSukuna:FindFirstChild("FX"):Clone()
+		clone.Parent = workspace.Effects
+
+
+		local sukunaModel = clone:FindFirstChild("Sukuna (3)")
+		if sukunaModel then
+			for _, v in pairs(sukunaModel:GetDescendants()) do
+				if v:IsA("BasePart") then
+					v.CanCollide = false
+				end
+			end
+		end
+
+		for _, v in pairs(clone:GetDescendants()) do
+			if v:IsA("BasePart") and (
+				v.Parent.Name == "GroundDomain" or
+					v.Parent.Name == "SummonPart" or
+					v.Parent.Name == "DomainSlash" or
+					v.Parent.Name == "ExpanBubble" or
+					v.Parent.Name == "ExpanBubble2" or
+					v.Parent.Name == "Smelly" or
+					v.Parent.Name == "Haze" or
+					v.Parent.Name == "Haze2" or
+					v.Parent.Name == "Haze3" or
+					v.Parent.Name == "Haze4" or
+					v:FindFirstChildWhichIsA("ParticleEmitter") or
+					v:FindFirstChildWhichIsA("Beam") or
+					v:FindFirstChildWhichIsA("Decal")
+				) then
+				v.CanCollide = false
+			end
+		end
+
+		task.delay(22.5, function()
+			local Frame = Instance.new("Frame")
+			Frame.Parent = plr.PlayerGui:FindFirstChild("Main") or Instance.new("ScreenGui", plr.PlayerGui)
+			Frame.ZIndex = 30
+			Frame.BackgroundColor3 = Color3.new(0, 0, 0)
+			Frame.Visible = true
+			Frame.Size = UDim2.new(1, 0, 1, 0)
+			Frame.Position = UDim2.new(0, 0, 0, 0)
+			Frame.BackgroundTransparency = 1
+			Debris:AddItem(Frame, 3.3333333333333335)
+
+			local tween = TweenService:Create(Frame, TweenInfo.new(0.8333333333333334), {BackgroundTransparency = 0})
+			tween:Play()
+
+			task.delay(0.8333333333333334, function()
+				local tween = TweenService:Create(Frame, TweenInfo.new(0.3333333333333333), {BackgroundTransparency = 1})
+				tween:Play()
+			end)
+		end)
+
+		task.delay(23.333333333333332, function()
+			clone:Destroy()
+		end)
+
+		domainHighlight()
+
+		local offset = CFrame.new(-0.569351196, 7.96411037, -2.19203377) * CFrame.Angles(0, -2.0943951023931953, 0)
+		clone:PivotTo(hrp.CFrame * offset)
+
+		local GroundDomain = clone:FindFirstChild("GroundDomain")
+		local SummonPart = clone:FindFirstChild("SummonPart")
+		local DomainSlash = clone:FindFirstChild("DomainSlash")
+		var774 = clone:FindFirstChild("Cam02")
+		local Haze = clone:FindFirstChild("Haze")
+		local Haze2 = clone:FindFirstChild("Haze2")
+		local Haze3 = clone:FindFirstChild("Haze3")
+		local Haze4 = clone:FindFirstChild("Haze4")
+
+		if GroundDomain then
+			for _, v in pairs(GroundDomain:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v.Enabled = true
+				end
+			end
+		end
+
+		task.delay(2.4166666666666665, function()
+			if SummonPart then
+				for _, v in pairs(SummonPart:GetDescendants()) do
+					if v:IsA("ParticleEmitter") or v:IsA("Beam") then
+						task.spawn(function()
+							v.Enabled = true
+						end)
+					end
+				end
+			end
+		end)
+
+		local ExpanBubble = clone:FindFirstChild("ExpanBubble")
+		if ExpanBubble then
+			task.delay(3.466666666666667, function()
+				for _, v in pairs(ExpanBubble:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						task.spawn(function()
+							v:Emit(v:GetAttribute("EmitCount") or 30)
+						end)
+					end
+				end
+			end)
+		end
+
+		task.delay(3.966666666666667, function()
+			if GroundDomain then
+				for _, v in pairs(GroundDomain:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v.Enabled = false
+					end
+				end
+			end
+		end)
+
+		task.delay(5.633333333333334, function()
+			if GroundDomain then
+				for _, v in pairs(GroundDomain:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						v.Enabled = false
+					end
+				end
+			end
+		end)
+
+		local ExpanBubble2 = clone:FindFirstChild("ExpanBubble2")
+		if ExpanBubble2 then
+			task.delay(7.283333333333333, function()
+				for _, v in pairs(ExpanBubble2:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						task.spawn(function()
+							v:Emit(v:GetAttribute("EmitCount") or 30)
+						end)
+					end
+				end
+			end)
+		end
+
+		local Smelly = clone:FindFirstChild("Smelly")
+		task.delay(9.1, function()
+			if SummonPart then
+				for _, v in pairs(SummonPart:GetDescendants()) do
+					if v:IsA("ParticleEmitter") or v:IsA("Beam") then
+						task.spawn(function()
+							v.Enabled = false
+						end)
+					end
+				end
+			end
+
+			if Smelly then
+				for _, v in pairs(Smelly:GetDescendants()) do
+					if v:IsA("ParticleEmitter") then
+						task.spawn(function()
+							v:Emit(v:GetAttribute("EmitCount") or 30)
+						end)
+					end
+				end
+			end
+		end)
+
+		task.delay(10.333333333333334, function()
+			if DomainSlash then
+				for _, v in pairs(DomainSlash:GetDescendants()) do
+					if v:IsA("ParticleEmitter") or v:IsA("Beam") then
+						task.spawn(function()
+							v.Enabled = true
+						end)
+					end
+				end
+			end
+
+			if Haze and Haze:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 0.95})
+				tween:Play()
+			end
+			if Haze2 and Haze2:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze2.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 0.95})
+				tween:Play()
+			end
+			if Haze3 and Haze3:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze3.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 0.95})
+				tween:Play()
+			end
+			if Haze4 and Haze4:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze4.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 0.95})
+				tween:Play()
+			end
+
+			local function createSpin(haze, angle)
+				local connection
+				local function spin()
+					if not haze or not haze.Parent then
+						if connection then connection:Disconnect() end
+						return
+					end
+					local tween = TweenService:Create(haze, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
+						CFrame = haze.CFrame * CFrame.Angles(0, math.rad(angle), 0)
+					})
+					tween:Play()
+					connection = tween.Completed:Connect(spin)
+				end
+				return spin
+			end
+
+			if Haze then
+				local spin = createSpin(Haze, 180)
+				task.spawn(spin)
+			end
+			if Haze2 then
+				local spin = createSpin(Haze2, -180)
+				task.spawn(spin)
+			end
+			if Haze3 then
+				local spin = createSpin(Haze3, 180)
+				task.spawn(spin)
+			end
+			if Haze4 then
+				local spin = createSpin(Haze4, -180)
+				task.spawn(spin)
+			end
+		end)
+
+		task.delay(12.25, function()
+			local sukunaModel = clone:FindFirstChild("Sukuna (3)")
+			if sukunaModel then
+				sukunaModel:PivotTo(sukunaModel:GetPivot() * CFrame.new(0, 5, 0))
+			end
+		end)
+
+		task.delay(20.8, function()
+			if DomainSlash then
+				for _, v in pairs(DomainSlash:GetDescendants()) do
+					if v:IsA("ParticleEmitter") or v:IsA("Beam") then
+						task.spawn(function()
+							v.Enabled = false
+						end)
+					end
+				end
+			end
+
+			if Haze and Haze:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 1})
+				tween:Play()
+			end
+			if Haze2 and Haze2:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze2.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 1})
+				tween:Play()
+			end
+			if Haze3 and Haze3:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze3.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 1})
+				tween:Play()
+			end
+			if Haze4 and Haze4:FindFirstChild("Decal") then
+				local tween = TweenService:Create(Haze4.Decal, TweenInfo.new(0.3333333333333333), {Transparency = 1})
+				tween:Play()
+			end
+		end)
+
+		if sukunaModel then
+			local domainAnim = Anims.KingofHeian:FindFirstChild("SukunaB Domain")
+			if domainAnim then
+				sukunaModel.AnimationController.Animator:LoadAnimation(domainAnim):Play()
+			end
+		end
+	end
+
+	DomainCamera()
+	HeianDomainEffect()
+end)HeianH
