@@ -1,0 +1,255 @@
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+
+local function isPlayerMoving(humanoid)
+	return humanoid.MoveDirection.Magnitude > 0 or humanoid:GetState() == Enum.HumanoidStateType.Jumping or humanoid:GetState() == Enum.HumanoidStateType.Freefall
+end
+
+local function playEffect(plr)
+	local char = plr.Character
+	if not char then return end
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	local hrp = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart
+	if not humanoid or not hrp then return end
+
+	
+	local animwalley = humanoid:LoadAnimation(script:WaitForChild("Anim"))
+	animwalley:Play()
+
+	local sound = script:WaitForChild("Sound")
+	if not sound.IsPlaying then
+		sound:Play()
+	end
+	local song = script:WaitForChild("walleywest song")
+	if not song.IsPlaying then
+		song:Play()
+	end
+
+
+	local vfxModel = RS:WaitForChild("WallyWest by aizen"):WaitForChild("speedster"):Clone()
+	vfxModel.Parent = char
+
+
+	local mainPart = vfxModel:WaitForChild("cframeGroup")
+	mainPart:PivotTo(hrp.CFrame)
+
+
+	vfxModel.vfx1.Weld.Part0 = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or hrp
+
+	for _, part in ipairs(vfxModel.bodyaura:GetChildren()) do
+		local charPart = char:FindFirstChild(part.Name)
+		if charPart and part:FindFirstChild("Weld") then
+			part.Weld.Part0 = charPart
+		end
+	end
+
+	
+	local function enableEmitters(parent, duration)
+		for _, emitter in ipairs(parent:GetDescendants()) do
+			if emitter:IsA("ParticleEmitter") then
+				emitter.Enabled = true
+				task.delay(duration, function()
+					emitter.Enabled = false
+				end)
+			end
+		end
+	end
+
+	-- Function to emit particles (burst)
+	local function emitParticles(parent)
+		for _, emitter in ipairs(parent:GetDescendants()) do
+			if emitter:IsA("ParticleEmitter") then
+				local emitCount = emitter:GetAttribute("EmitCount") or 10
+				emitter:Emit(emitCount)
+			end
+		end
+	end
+
+	
+	local function animateBeams(beamsFolder, duration, widthStart)
+		local beams = beamsFolder:GetDescendants()
+		local originalWidths = {}
+		for _, beam in ipairs(beams) do
+			if beam:IsA("Beam") then
+				originalWidths[beam] = {Width0 = beam.Width0, Width1 = beam.Width1}
+				beam.Width0 = 0
+				beam.Width1 = 0
+				local tweenIn = TweenService:Create(beam, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Width0 = widthStart, Width1 = widthStart})
+				local tweenOut = TweenService:Create(beam, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Width0 = 0, Width1 = 0})
+				tweenIn:Play()
+				tweenIn.Completed:Connect(function()
+					tweenOut:Play()
+				end)
+			end
+		end
+
+		local startTick = tick()
+		local conn
+		conn = RunService.PreRender:Connect(function()
+			local elapsed = tick() - startTick
+			if elapsed >= duration * 2 then
+				for beam, widths in pairs(originalWidths) do
+					if beam and beam.Parent then
+						beam.Width0 = widths.Width0
+						beam.Width1 = widths.Width1
+					end
+				end
+				beamsFolder.CFrame = beamsFolder.CFrame 
+				conn:Disconnect()
+			else
+				local rotationAngle = -5400 * (elapsed / (duration * 2))
+				beamsFolder.CFrame = beamsFolder.CFrame * CFrame.Angles(0, math.rad(rotationAngle), 0)
+			end
+		end)
+
+		return conn
+	end
+
+
+	local activeTweens = {}
+	local activeConnections = {}
+
+	local function cleanup()
+		animwalley:Stop()
+		if vfxModel then
+			vfxModel:Destroy()
+		end
+		sound:Stop()
+		song:Stop()
+		for _, conn in ipairs(activeConnections) do
+			if conn.Connected then
+				conn:Disconnect()
+			end
+		end
+		activeConnections = {}
+		activeTweens = {}
+	end
+
+	
+	local playing = true
+	task.spawn(function()
+		while playing do
+			if not animwalley.IsPlaying then
+				animwalley:Play()
+			end
+			wait(animwalley.Length)
+		end
+	end)
+
+	
+
+	local function playVfxCycle()
+		-- Enable vfx1 particles
+		enableEmitters(vfxModel.vfx1, 1.65)
+
+	
+		task.delay(0.35, function()
+			local beamsFolder = vfxModel.cframeGroup:WaitForChild("beams")
+			table.insert(activeConnections, animateBeams(beamsFolder, 0.68, 14))
+		end)
+
+		task.delay(2.95, function()
+			local beamsFolder2 = vfxModel.cframeGroup:WaitForChild("beams2")
+			table.insert(activeConnections, animateBeams(beamsFolder2, 0.11, 13.5))
+		end)
+
+		
+		task.delay(0.366, function()
+			enableEmitters(vfxModel.cframeGroup.Part.vfx2, 1.15)
+		end)
+
+	
+		task.delay(1.63, function()
+			emitParticles(vfxModel.cframeGroup.Part.vfx3)
+		end)
+		task.delay(1.73, function()
+			emitParticles(vfxModel.cframeGroup.Part.vfx4)
+		end)
+		task.delay(2, function()
+			emitParticles(vfxModel.cframeGroup.Part.vfx5)
+		end)
+
+	
+		task.delay(2.02, function()
+			enableEmitters(vfxModel.bodyaura, 1)
+		end)
+
+
+		task.delay(2.9, function()
+			enableEmitters(vfxModel.vfx1, 0.45)
+		end)
+
+	
+		task.delay(2.93, function()
+			enableEmitters(vfxModel.cframeGroup.Part.vfx6, 0.25)
+		end)
+	end
+
+	
+	playVfxCycle()
+
+
+	local vfxLoop = RunService.Heartbeat:Connect(function()
+	
+	end)
+
+
+	local elapsedTime = 0
+	local heartbeatConn
+	heartbeatConn = RunService.Heartbeat:Connect(function(dt)
+		elapsedTime = elapsedTime + dt
+
+		
+		if isPlayerMoving(humanoid) then
+			playing = false
+			cleanup()
+			heartbeatConn:Disconnect()
+			return
+		end
+
+		if elapsedTime >= 3.3 then
+			elapsedTime = elapsedTime - 3.3
+			playVfxCycle()
+		end
+	end)
+
+	table.insert(activeConnections, heartbeatConn)
+
+	
+	local player = Players:GetPlayerFromCharacter(char)
+	if player and player == plr then
+		local blur = Instance.new("BlurEffect")
+		blur.Size = 25
+		blur.Parent = Lighting
+		TweenService:Create(blur, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = 0}):Play()
+		task.delay(0.15, function()
+			if blur then blur:Destroy() end
+		end)
+
+		local cc = RS["WallyWest by aizen"].speedster:FindFirstChild("ColorCorrection") and RS["WallyWest by aizen"].speedster.ColorCorrection:Clone()
+		if cc then
+			cc.Parent = Lighting
+			cc.TintColor = Color3.fromRGB(0, 187, 255)
+			cc.Brightness = 0.4
+			cc.Contrast = 1
+			cc.Saturation = -0.4
+			TweenService:Create(cc, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+				Contrast = 0,
+				Brightness = 0,
+				TintColor = Color3.fromRGB(255, 255, 255),
+				Saturation = 0
+			}):Play()
+			task.delay(0.5, function()
+				if cc then cc:Destroy() end
+			end)
+		end
+	end
+end
+
+script.Parent.OnServerEvent:Connect(function(plr)
+	playEffect(plr)
+end)
