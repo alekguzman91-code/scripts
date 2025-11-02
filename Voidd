@@ -1,0 +1,207 @@
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+
+local Stunn = require(RS.UnlimitedVoid.HitService.StunHandlerV2)
+local Emiit = require(RS.UnlimitedVoid.Emit)
+
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char:FindFirstChild("Humanoid")
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local possition = hrp.CFrame
+	local Anim01 = humanoid:LoadAnimation(script.Anim01)
+	local Anim02 = humanoid:LoadAnimation(script.Anim02)
+	
+	Anim01:Play()
+	Anim01:GetMarkerReachedSignal("START"):Connect(function()
+		hrp.Anchored = true
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+		humanoid.AutoRotate = false
+
+		local DomainText = RS.UnlimitedVoid.Text:Clone()
+		DomainText.Parent = workspace.Visuals
+		DomainText.CFrame = hrp.CFrame * CFrame.new(0, 0, 0)
+		game.Debris:AddItem(DomainText, 1)
+
+		Emiit.Emit(DomainText.Attach1)
+		Emiit.Emit(DomainText.Attach2)
+
+		local RootPart = RS.UnlimitedVoid.RootPart:Clone()
+		RootPart.Parent = workspace.Visuals
+		RootPart.CFrame = hrp.CFrame * CFrame.new(50000, 0, -50000)
+
+		local RootPart2 = RS.UnlimitedVoid.RootPart2:Clone()
+		RootPart2.Parent = workspace.Visuals
+		RootPart2.CFrame = hrp.CFrame * CFrame.new(0, 0, 0)
+
+		local RootPart3 = RS.UnlimitedVoid.RootPart3:Clone()
+		RootPart3.Parent = workspace.Visuals
+		RootPart3.CFrame = hrp.CFrame * CFrame.new(0, 0, 0)
+
+		local sfx = script.Domain:Clone()
+		sfx.Parent = RootPart3
+		sfx:Play()
+
+		local Bubble = RS.UnlimitedVoid.Bubble:Clone()
+		Bubble.Parent = workspace.Visuals
+		Bubble.CFrame = RootPart2.CFrame * CFrame.new(0, 0, 0)
+
+		local Splatter = RS.UnlimitedVoid.Splatter:Clone()
+		Splatter.Parent = workspace.Visuals
+		Splatter.CFrame = RootPart3.CFrame * CFrame.new(0, -.1, 0)
+		for i,v in pairs(Splatter:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				TS:Create(v, TweenInfo.new(.5),{ShapePartial = 1} ):Play()
+			end
+		end
+		game.Debris:AddItem(Splatter, 3)
+
+		local hitbox = Instance.new("Part")
+		hitbox.Parent = workspace.Visuals
+		hitbox.Material = Enum.Material.ForceField
+		hitbox.Color = Color3.fromRGB(255, 0, 0)
+		hitbox.Size = Vector3.new(200, 200, 200)
+		hitbox.CFrame = hrp.CFrame * CFrame.new(0, 0, 0)
+		hitbox.Transparency = 1
+		hitbox.CanCollide = false
+		hitbox.CanTouch = true
+		hitbox.Anchored = true
+		hitbox.CastShadow = false
+		game.Debris:AddItem(hitbox, 1.5)
+
+		local hitlist = {}
+		hitbox.Touched:Connect(function(v)
+			local VChar = v.Parent
+			if VChar then
+				local vhumaoid = VChar:FindFirstChild("Humanoid")
+				local rootpart = VChar:FindFirstChild("HumanoidRootPart")
+				if vhumaoid and not hitlist[vhumaoid] and VChar.Name ~= plr.Name then
+					hitlist[vhumaoid] = true 
+					local wawa = rootpart.Position
+					local aoOrigr = rootpart.CFrame - rootpart.Position 
+					local positionn = hrp.CFrame:PointToObjectSpace(rootpart.Position)
+
+					Stunn.Stun(v.Parent:WaitForChild("Humanoid"), 17.5)
+
+					task.delay(1.5, function()
+						local domainPosition = RootPart.CFrame:PointToWorldSpace(positionn)
+						rootpart.CFrame = CFrame.new(domainPosition) * aoOrigr
+
+						local Shaker = script.Parent.Shaker:Clone()
+						Shaker.Parent = VChar
+						Shaker.Enabled = true
+						game.Debris:AddItem(Shaker, 4)
+
+						local View = script.Parent.Camera:Clone()
+						View.Parent = VChar
+						View.Enabled = true
+
+						local White = script.Parent.white:Clone()
+						White.Parent = VChar
+						White.Enabled = true
+						task.wait(4)
+
+						local Step = RS.UnlimitedVoid.Step.Attachment:Clone()
+						Step.Parent = rootpart
+
+						local idk = RS.UnlimitedVoid.stun:Clone()
+						idk.Parent = workspace.Visuals
+						idk.CFrame = VChar.Head.CFrame * CFrame.new(0, 0, 0)
+
+						local weld = Instance.new("ManualWeld",idk)
+						weld.Part0 = VChar.Head
+						weld.Part1 = idk
+						weld.C0 = CFrame.new(0,0,0)
+
+						task.wait(12)
+						idk:Destroy()
+						rootpart.CFrame = CFrame.new(wawa) * aoOrigr
+						Step:Destroy()
+					end)
+				end
+			end
+		end)
+		spawn(function()
+			TS:Create(Bubble, TweenInfo.new(.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = Vector3.new(200, 200, 200)}):Play()
+			wait(1)
+			TS:Create(Bubble, TweenInfo.new(.3), {Transparency = 1}):Play()
+			wait(1)
+			Bubble:Destroy()
+		end)
+		
+		Anim01:GetMarkerReachedSignal("Start"):Connect(function()
+			Anim01:Stop()
+			Anim02:Play()
+			
+			local StartDomain = RS.UnlimitedVoid.Start:Clone()
+			StartDomain.Parent = workspace.Visuals
+			StartDomain.CFrame = RootPart.CFrame * CFrame.new(0, 21, 0)
+
+			local BlackDomain = RS.UnlimitedVoid.blackDomain:Clone()
+			BlackDomain.Parent = workspace.Visuals
+			BlackDomain.CFrame = Splatter.CFrame * CFrame.new(0, 0, 0)
+
+			Emiit.Disabled(Splatter)
+
+			local Shaker = script.Parent.Shaker:Clone()
+			Shaker.Parent = char
+			Shaker.Enabled = true
+			game.Debris:AddItem(Shaker, 4)
+
+			local View = script.Parent.Camera:Clone()
+			View.Parent = char
+			View.Enabled = true
+
+			local White = script.Parent.white:Clone()
+			White.Parent = char
+			White.Enabled = true
+
+			local Line = RS.UnlimitedVoid.Line:Clone()
+			Line.Parent = workspace.Visuals
+			Line.CFrame = RootPart.CFrame * CFrame.new(0, 0, 0)
+
+			hrp.CFrame = RootPart.CFrame * CFrame.new(0, 0, 0)
+			RootPart3.CFrame = RootPart.CFrame * CFrame.new(0, 0, 0)
+
+			spawn(function()
+				wait(3.75)
+				Line:Destroy()
+			end)
+			
+			Anim02:GetMarkerReachedSignal("Boom"):Connect(function()
+				Anim02:Stop()
+				local Step = RS.UnlimitedVoid.Step.Attachment:Clone()
+				Step.Parent = hrp
+
+				spawn(function()
+					task.wait(.5)
+					hrp.Anchored = false
+					humanoid.WalkSpeed = 16
+					humanoid.JumpPower = 50
+					humanoid.AutoRotate = true
+				end)
+				StartDomain:Destroy()
+
+				local DomainVFX = RS.UnlimitedVoid.Domain:Clone()
+				DomainVFX.Parent = workspace.Visuals
+				DomainVFX.CFrame = RootPart.CFrame * CFrame.new(0, 62.5, 0)
+				task.delay(.75, function()
+					Emiit.Emit(DomainVFX)
+				end)
+				
+				wait(12)
+				RootPart:Destroy()
+				Step:Destroy()
+				RootPart2:Destroy()
+				RootPart3:Destroy()
+				hrp.CFrame = possition
+				DomainVFX:Destroy()
+				task.wait(5)
+				BlackDomain:Destroy()
+				
+			end)
+			
+		end)	
+	end)
+end)
