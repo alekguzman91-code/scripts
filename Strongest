@@ -1,0 +1,229 @@
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+	local Bossraid = humanoid:LoadAnimation(RS.Assets.Animations.Bossraid)
+	local Idle = humanoid:LoadAnimation(RS.Assets.Animations.Idle)
+	Bossraid:Play()
+	humanoid.WalkSpeed = 0
+	local Blue = RS.Assets.Effects.Blue:Clone()
+	Blue.Parent = char["Left Arm"]
+	Blue.CFrame = char["Left Arm"].CFrame
+	local weld1 = Instance.new("Weld", Blue)
+	weld1.Part0 = char["Left Arm"]
+	weld1.Part1 = Blue
+	weld1.C0 = CFrame.new(0,0,0)
+	local Texts = RS.Assets.Effects.Texts:Clone()
+	Texts.Parent = char["HumanoidRootPart"]
+	Texts.CFrame = char["HumanoidRootPart"].CFrame
+	local rightArm = char:FindFirstChild("Right Arm")
+	if rightArm then
+		rightArm.Transparency = 1
+		for _, part in ipairs(rightArm:GetDescendants()) do
+			if part:IsA("Decal") or part:IsA("Texture") or part:IsA("Mesh") then
+				part.Transparency = 1
+			end
+		end
+		for _, accessory in ipairs(char:GetChildren()) do
+			if accessory:IsA("Accessory") then
+				local handle = accessory:FindFirstChild("Handle")
+				if handle then
+					for _, weld in ipairs(handle:GetDescendants()) do
+						if weld:IsA("Weld") or weld:IsA("Motor6D") then
+							if weld.Part1 == rightArm or weld.Part0 == rightArm then
+								handle.Transparency = 1
+								for _, d in ipairs(handle:GetDescendants()) do
+									if d:IsA("Decal") or d:IsA("Texture") then
+										d.Transparency = 1
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	Bossraid.Stopped:Connect(function()
+		Idle:Play()
+		local SteamArm = RS.Assets.Effects.SteamArm:Clone()
+		SteamArm.Parent = rightArm
+		SteamArm.CFrame = rightArm.CFrame
+		local weld2 = Instance.new("Weld", SteamArm)
+		weld2.Part0 = rightArm
+		weld2.Part1 = SteamArm
+		weld2.C0 = CFrame.new(0,0,0)
+		wait(0.01)
+		for _,Particles in pairs(SteamArm:GetDescendants()) do
+			if Particles:IsA("ParticleEmitter") then
+				Particles.Enabled = true
+			end
+		end
+		local moved = false
+		local movementCheck
+		movementCheck = RunService.Heartbeat:Connect(function()
+			if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+				if not moved then
+					moved = true
+					if Idle.IsPlaying then
+						Idle:Stop()
+						humanoid.WalkSpeed = 16
+						for _,Particles in pairs(SteamArm:GetDescendants()) do
+							if Particles:IsA("ParticleEmitter") then
+								Particles.Enabled = false
+							end
+						end
+						Texts:Destroy()
+					end
+					movementCheck:Disconnect()
+				end
+			end
+		end)
+	end)
+	spawn(function()
+		local Activate = RS.Assets.Effects.Activate:Clone()
+		Activate.Parent = char["HumanoidRootPart"]
+		Activate.CFrame = hrp.CFrame * CFrame.new(0,-2.8,0)
+		wait(1.45)
+		local ReverseHealArm = RS.Assets.Effects.ReverseHealArm:Clone()
+		ReverseHealArm.Parent = rightArm
+		ReverseHealArm.CFrame = rightArm.CFrame
+		local weld = Instance.new("Weld", ReverseHealArm)
+		weld.Part0 = rightArm
+		weld.Part1 = ReverseHealArm
+		weld.C0 = CFrame.new(0,0,0)
+		local anim = ReverseHealArm.ReverseHealArm.AnimationController:LoadAnimation(RS.Assets.Animations.ReverseHealArm)
+		anim:Play()
+		local anim2 = ReverseHealArm.ReverseHealArm2.AnimationController:LoadAnimation(RS.Assets.Animations.ReverseHealArm)
+		anim2:Play()
+		wait(0.01)
+		for _, v in pairs(ReverseHealArm:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		for _, v in pairs(Activate:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		wait(0.8)
+		spawn(function()
+		wait(1)
+	    ReverseHealArm:Destroy()		
+		end)
+		local function fadeIn(part)
+			if not part:IsA("BasePart") and not part:IsA("Decal") and not part:IsA("Texture") and not part:IsA("Mesh") then return end
+			local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			local tween = TweenService:Create(part, tweenInfo, {Transparency = 0})
+			tween:Play()
+		end
+
+		if rightArm then
+			rightArm.Transparency = 1
+			fadeIn(rightArm)
+
+			for _, part in ipairs(rightArm:GetDescendants()) do
+				if part:IsA("Decal") or part:IsA("Texture") or part:IsA("Mesh") then
+					part.Transparency = 1
+					fadeIn(part)
+				end
+			end
+
+			for _, accessory in ipairs(char:GetChildren()) do
+				if accessory:IsA("Accessory") then
+					local handle = accessory:FindFirstChild("Handle")
+					if handle then
+						for _, weld in ipairs(handle:GetDescendants()) do
+							if weld:IsA("Weld") or weld:IsA("Motor6D") then
+								if weld.Part1 == rightArm or weld.Part0 == rightArm then
+									handle.Transparency = 1
+									fadeIn(handle)
+									for _, d in ipairs(handle:GetDescendants()) do
+										if d:IsA("Decal") or d:IsA("Texture") then
+											d.Transparency = 1
+											fadeIn(d)
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+	local Sound = RS.Assets.Sound.Sound:Clone()
+	Sound.Parent = hrp
+	Sound:Play()
+
+	local Land = RS.Assets.Effects.Land:Clone()
+	Land.Parent = hrp
+	Land.CFrame = hrp.CFrame * CFrame.new(0,-2.8,0)
+
+	local Emit = RS.Assets.Effects.Emit:Clone()
+	Emit.Parent = char["HumanoidRootPart"]
+	Emit.CFrame = hrp.CFrame * CFrame.new(0,0.3,0)
+	
+	local Emit2 = RS.Assets.Effects.Emit2:Clone()
+	Emit2.Parent = char["HumanoidRootPart"]
+	Emit2.CFrame = hrp.CFrame * CFrame.new(0,-2.8,0)
+	
+	local Slam = RS.Assets.Effects.Slam:Clone()
+	Slam.Parent = hrp
+	Slam.CFrame = hrp.CFrame * CFrame.new(0,-2.8,0)
+	wait(0.88)
+	local CameraShaker = script.CameraShaker:Clone()
+	CameraShaker.Parent = char
+	CameraShaker.Enabled = true
+	Blue:Destroy()
+	local RootVFX_2 = RS.Assets.Effects.RootVFX_2:Clone()
+	RootVFX_2.Parent = char["HumanoidRootPart"]
+	RootVFX_2.CFrame = hrp.CFrame * CFrame.new(0,0,0)
+	for _, v in pairs(Emit:GetDescendants()) do
+		if v:IsA("ParticleEmitter") then
+			v:Emit(v:GetAttribute("EmitCount"))
+		end
+	end
+	for _, v in pairs(Emit2:GetDescendants()) do
+		if v:IsA("ParticleEmitter") then
+			v:Emit(v:GetAttribute("EmitCount"))
+		end
+	end
+	for _, v in pairs(Slam:GetDescendants()) do
+		if v:IsA("ParticleEmitter") then
+			v:Emit(v:GetAttribute("EmitCount"))
+		end
+	end
+	for _,Particles in pairs(Slam.FloorEnable:GetDescendants()) do
+		if Particles:IsA("ParticleEmitter") then
+			Particles.Enabled = true
+		end
+	end
+	spawn(function()
+		wait(0.5)
+		for _,Particles in pairs(Slam.FloorEnable:GetDescendants()) do
+			if Particles:IsA("ParticleEmitter") then
+				Particles.Enabled = false
+			end
+		end
+	end)
+	spawn(function()
+		wait(1.3)
+		for _, v in pairs(Land:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		wait(0.01)
+		for i,v in pairs(Texts:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+	end)
+end)
