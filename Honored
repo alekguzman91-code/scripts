@@ -1,0 +1,182 @@
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+	
+	local Stun = script.Parent.Stun:Clone()
+	local UnStun = script.Parent.UnStun:Clone()
+	
+
+	
+	local PurpleAnim = humanoid:LoadAnimation(script.Anim)
+	PurpleAnim:Play()
+	
+	
+	local ResetDisabled = script.Parent.ResetEnabled:Clone()
+	ResetDisabled.Parent = char
+	ResetDisabled.Enabled = true
+	game.Debris:AddItem(ResetDisabled, 20)
+	
+	Stun.Parent = char
+	Stun.Enabled = true
+	
+	
+
+	
+	local RightArm = RS.GojoSatoru.HollowPurple.RightHandle:Clone()
+	RightArm.Parent = char["Right Arm"]
+
+	local MOO = RS.GojoSatoru.HollowPurple.RightHandleMain:Clone()
+	MOO.Parent = char["Right Arm"]
+	MOO.Part1 = RightArm.RightHandleMain
+	MOO.Part0 = char["Right Arm"]
+	MOO.C0 = CFrame.new(0, -0.75, 0) * CFrame.Angles(math.rad(0), math.rad(180), math.rad(0)) -- Adjusted rotation
+
+	local LefttArm = RS.GojoSatoru.HollowPurple.LeftHandle:Clone()
+	LefttArm.Parent = char["Left Arm"]
+
+	local MOO2 = RS.GojoSatoru.HollowPurple.LeftHandleMain:Clone()
+	MOO2.Parent = char["Left Arm"]
+	MOO2.Part1 = LefttArm.LeftHandleMain
+	MOO2.Part0 = char["Left Arm"]
+	MOO2.C0 = CFrame.new(0, -0.75, 0) * CFrame.Angles(math.rad(0), math.rad(180), math.rad(0)) -- Adjusted rotation
+
+	-- Get the player's skin color
+	local skinColor = char["Right Arm"].BrickColor 
+
+	-- Apply the skin color to all parts of RightArm
+	for _, v in pairs(RightArm:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.BrickColor = skinColor
+		end
+	end
+
+	-- Apply the skin color to all parts of LefttArm
+	for _, v in pairs(LefttArm:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.BrickColor = skinColor
+		end
+	end
+
+
+spawn(function()
+	wait(13)
+	LefttArm:Destroy()
+	RightArm:Destroy()
+end)
+
+	
+	
+	spawn(function()
+		local Camera = script.Camera:Clone()
+		Camera.Parent = char
+		Camera.Enabled = true
+		wait(10.2)
+		local Camera = script.CameraStop:Clone()
+		Camera.Parent = char
+		Camera.Enabled = true
+	end)		
+	
+	
+	spawn(function()
+		wait(12)
+		Stun.Enabled = false
+		UnStun.Enabled = true
+		UnStun.Parent = char
+	end)
+	
+	local higlig = RS.GojoSatoru.HollowPurple.Highlight:Clone()
+	higlig.Parent = char
+	game.Debris:AddItem(higlig, 3)
+	TS:Create(higlig,
+		TweenInfo.new(3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), 
+		{FillTransparency = 1, OutlineTransparency = 1}
+	):Play()
+	
+	humanoid.WalkSpeed = 0
+	humanoid.JumpPower = 0
+	humanoid.AutoRotate = false
+	
+	spawn(function()
+		local PurpleSound = script.Music:Clone()
+		PurpleSound.Parent = hrp
+		PurpleSound:Play()
+		
+		local PurpleSound = script.Sfx:Clone()
+		PurpleSound.Parent = hrp
+		PurpleSound:Play()
+		
+		local PurpleSound = script.Voice:Clone()
+		PurpleSound.Parent = hrp
+		PurpleSound:Play()
+		
+		wait(12)
+		local PurpleSound = script.Release:Clone()
+		PurpleSound.Parent = hrp
+		PurpleSound:Play()
+		
+	end)
+
+
+		
+
+		
+	
+	humanoid.AutoRotate = true
+
+	
+	PurpleAnim:AdjustSpeed(1)
+
+	
+	
+
+	
+	local Purple = RS.GojoSatoru.HollowPurple.HollowPurple:Clone()
+	Purple.Parent = workspace.Visuals
+	local weld3 = Instance.new("Weld")
+	weld3.Parent = hrp
+	weld3.Part0 = weld3.Parent
+	weld3.Part1 = Purple
+	weld3.C0 = CFrame.new (0, 5, -17)
+	
+	wait(12)
+	Purple:Destroy()
+	local CameraShaker5AndImpactFrame = script.Parent.CameraShaker5AndImpactFrame:Clone()
+	CameraShaker5AndImpactFrame.Parent = char
+	CameraShaker5AndImpactFrame.Enabled = true
+	game.Debris:AddItem(CameraShaker5AndImpactFrame, 5)
+	
+	local PurpleShoot = RS.GojoSatoru.HollowPurple.PurpleShoot:Clone()
+	PurpleShoot.Parent = workspace.Effects
+	PurpleShoot.CFrame = Purple.CFrame * CFrame.new(0,0,0)
+	game.Debris:AddItem(PurpleShoot,10)
+	local heyy = TS:Create(PurpleShoot,TweenInfo.new(10),{CFrame = Purple.CFrame * CFrame.new(0,0,-1000) })
+	heyy:Play()
+	
+	local purple = true
+	
+	task.spawn(function()
+		repeat 
+			local hitcontent = workspace:GetPartBoundsInBox(PurpleShoot.CFrame, Vector3.new(35, 35, 35))
+			for _,v in pairs(hitcontent) do
+				if v.Parent:FindFirstChild("Humanoid") and v.Parent ~= char then
+					local VHumanoid = v.Parent.Humanoid
+					local RootPart = v.Parent.HumanoidRootPart
+					local Damage = 500 
+					v.Parent.Humanoid:TakeDamage(Damage)
+				end
+			end
+			task.wait()
+		until purple == false
+	end)
+	task.delay(5,function()
+		purple = false
+	end)
+	wait(.2)
+	humanoid.WalkSpeed = 16
+	humanoid.JumpPower = 50
+	
+end)
