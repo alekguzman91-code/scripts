@@ -1,0 +1,237 @@
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+
+local ragdoll = require(RS.Raiden.Ragdoll)
+local TouchedConnection
+local vel
+local CraterModule = require(RS.Raiden.CraterModule)
+script.Parent.OnServerEvent:Connect(function(plr)
+	local char = plr.Character
+	local humanoid = char.Humanoid
+	local hrp = char.HumanoidRootPart
+	local upKnockback = hrp.CFrame.UpVector * -50
+	local lookKnockback = hrp.CFrame.LookVector * 150
+	local combinedKnockback = upKnockback + lookKnockback
+	local Stun = script.Parent.Stun:Clone()
+	local UnStun = script.Parent.UnStun:Clone()
+
+
+	local StunE = script.Parent.Stun:Clone()
+	local UnStunE = script.Parent.UnStun:Clone()
+	local PunchAnim = humanoid:LoadAnimation(script.Punch)
+	PunchAnim:Play()
+	humanoid.WalkSpeed = 0
+
+	
+	
+
+	
+	Stun.Parent = char
+	Stun.Enabled = true
+	
+	spawn(function()
+		
+		wait(3.5)
+		
+		Stun.Enabled = false
+		UnStun.Parent = char
+		UnStun.Enabled = true
+		humanoid.WalkSpeed = 16
+
+	
+	
+	end)
+	local PunchThrow = script.F1:Clone()
+	PunchThrow.Parent = hrp
+	PunchThrow:Play()
+	PunchAnim:GetMarkerReachedSignal("Jump"):Connect(function() 
+		
+		vel = Instance.new("BodyVelocity", hrp)
+		vel.MaxForce = Vector3.new(1,1,1) * 1000000;
+		vel.Parent = hrp
+		vel.Velocity = Vector3.new(1,1,1) * hrp.CFrame.UpVector * 120
+		vel.Name  =  "SmallMoveVel"
+		game.Debris:AddItem(vel,.2)
+		
+
+		
+		local HitEffect1 = RS.RaidenProjectile.Jump.RaidenProjectile:Clone()
+		HitEffect1.Parent = hrp
+		for i, v in pairs(HitEffect1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		game.Debris:AddItem(HitEffect1, 5)
+		
+		
+		local HitEffect1 = RS.RaidenProjectile.Jump.GroundRaidenProjectile:Clone()
+		HitEffect1.Parent = hrp
+		for i, v in pairs(HitEffect1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		game.Debris:AddItem(HitEffect1, 5)
+		
+		
+		local HitEffect1 = RS.RaidenProjectile.Jump.Extras:Clone()
+		HitEffect1.Parent = hrp
+		for i, v in pairs(HitEffect1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		game.Debris:AddItem(HitEffect1, 5)
+		
+		
+		
+	end)
+	
+	PunchAnim:GetMarkerReachedSignal("hrpanchor"):Connect(function() 
+
+		hrp.Anchored = true
+		
+		local HitEffect1 = RS.RaidenProjectile.Shot.Charge:Clone()
+		HitEffect1.Parent = char.Torso
+		for i, v in pairs(HitEffect1:GetDescendants()) do
+			if v:IsA("ParticleEmitter") then
+				v:Emit(v:GetAttribute("EmitCount"))
+			end
+		end
+		game.Debris:AddItem(HitEffect1, 5)
+
+
+	end)
+	
+	
+	PunchAnim:GetMarkerReachedSignal("throw"):Connect(function() 
+
+		
+		
+
+		local fireballClone = RS.RaidenProjectile.Ki:Clone()
+		fireballClone.Parent = game.Workspace
+		fireballClone.Position = plr.Character.HumanoidRootPart.Position + Vector3.new(0, 20, 0)
+		fireballClone.Rotation = plr.Character.HumanoidRootPart.Rotation
+		game.Debris:AddItem(fireballClone, 10)
+		fireballClone.BodyVelocity.Velocity = combinedKnockback
+		fireballClone.HitBox.Position = fireballClone.Position + Vector3.new(0, 20, 0)
+
+		
+		
+
+
+		spawn(function()
+			wait(0.4)
+			
+			
+			
+
+			local Hitbox = RS.RaidenProjectile.Hitbox:Clone()
+			Hitbox.Parent = workspace.Visuals
+			Hitbox.CFrame = fireballClone.CFrame * CFrame.new(0, 0, 0)
+			game.Debris:AddItem(Hitbox, .5)
+			
+			
+			wait(0.1)
+			
+			
+
+
+
+
+			local hitcontent = workspace:GetPartBoundsInBox(Hitbox.CFrame, Vector3.new(37, 37, 37))
+			local hitlist = {}
+			for _,v in pairs(hitcontent) do
+				if v.Parent:FindFirstChild("Humanoid") and v.Parent ~= char and v.Parent.HumanoidRootPart.Anchored == false then
+					if not hitlist[v.Parent.Humanoid] then
+						hitlist[v.Parent.Humanoid] = true
+						local RootPart2 = v.Parent.HumanoidRootPart
+						local Damage1 = 30
+						v.Parent.Humanoid:TakeDamage(Damage1)
+
+
+
+
+
+
+						spawn(function()
+							ragdoll.StartRagdoll(v.Parent)
+
+							task.delay(5,function()
+								ragdoll.EndRagdoll(v.Parent)
+							end)
+						end)
+
+						vel = Instance.new("BodyVelocity", RootPart2)
+						vel.MaxForce = Vector3.new(1,1,1) * 1000000;
+						vel.Parent = RootPart2
+						vel.Velocity = Vector3.new(1,1,1) * RootPart2.CFrame.UpVector * 100
+						vel.Name  =  "SmallMoveVel"
+						game.Debris:AddItem(vel,.2)
+
+
+
+
+					end
+				end
+			end
+
+
+
+
+
+
+			
+			fireballClone.Transparency = 1
+			for i, v in pairs(fireballClone:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v:Destroy()
+				end
+			end
+			for i, v in pairs(fireballClone:GetDescendants()) do
+				if v:IsA("Trail") then
+					v:Destroy()
+				end
+			end
+
+
+
+			local HitEffect1 = RS.RaidenProjectile.Explosion.Attachment:Clone()
+			HitEffect1.Parent = fireballClone
+			for i, v in pairs(HitEffect1:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+			game.Debris:AddItem(HitEffect1, 15)
+			wait(2)
+			fireballClone:Destroy()
+		end)
+		PunchAnim:GetMarkerReachedSignal("unanchor"):Connect(function() 
+			hrp.Anchored = false
+			vel = Instance.new("BodyVelocity", hrp)
+			vel.MaxForce = Vector3.new(1,1,1) * 1000000;
+			vel.Parent = hrp
+			vel.Velocity = Vector3.new(1,1,1) * hrp.CFrame.UpVector * -90
+			vel.Name  =  "SmallMoveVel"
+			game.Debris:AddItem(vel,.2)
+
+		end)
+		
+		PunchAnim:GetMarkerReachedSignal("land"):Connect(function() 
+			local HitEffect1 = RS.RaidenProjectile.Land.Attachment:Clone()
+			HitEffect1.Parent = hrp
+			for i, v in pairs(HitEffect1:GetDescendants()) do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+			game.Debris:AddItem(HitEffect1, 10)
+			
+		end)
+	end)
+
+		
+end)
