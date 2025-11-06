@@ -1,0 +1,91 @@
+local plr = game:GetService("Players").LocalPlayer
+local char = plr.Character
+local hum = char:FindFirstChildOfClass("Humanoid")
+local text = script.Parent.killkill
+local velt = script.Parent.velt
+local lig = game:GetService("Lighting")
+local actualtext = {"Fear","Die","What?","Questions","Dying","Get away from me.","What are you?","What am i?","Falling down","I can't","You can't","Save me","No","No more","Help","Lost","Insanity","Death","Anarchy","Mind","Slaughter","Kill for me","Die for me","Worth","The Supreme one","Nonsense","Purpose","Stop","Go on","Look at me","Look at you","Trust me","Trust nobody","Weak","Eyes","He is watching","Always watching","Looking","Secrets","I'm watching","Follow me","Bow","On your knees","You"}
+local littlekid = Instance.new("Sound",workspace)
+littlekid.Volume = 0
+littlekid.SoundId = "rbxassetid://137321469"
+littlekid.Pitch = 1
+littlekid.Name = "spf"
+littlekid:Play()
+for i = 1, 200 do
+	game:GetService("RunService").Stepped:wait()
+	littlekid.Volume = littlekid.Volume + .05
+	for i,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("Sound") and v.Name ~= "spf" then
+			v.Volume = v.Volume - .5
+		end
+	end
+	script.Parent.ImageLabel.ImageTransparency = script.Parent.ImageLabel.ImageTransparency - .005
+	if script.Parent.ImageLabel.ImageTransparency < .5 then
+		hum.CameraOffset = Vector3.new(math.random(-1,1),math.random(-1,1),math.random(-1,1))
+	end
+local randomtext = actualtext[math.random(1,#actualtext)]
+local t = text:Clone() t.Parent = script.Parent
+t.Rotation = math.random(-20,20)
+t.Position = UDim2.new(Random.new():NextNumber(0,1),0,Random.new():NextNumber(0,1),0)
+t.TextStrokeTransparency = 1
+t.TextTransparency = math.random(3,8.5)/10
+t.Text = randomtext
+coroutine.wrap(function()
+for i = 1, 20 do
+	t.TextTransparency = t.TextTransparency + .025
+	t.TextStrokeTransparency = t.TextStrokeTransparency + .025
+	game:GetService("RunService").Stepped:wait()
+end
+t:Destroy()
+end)()
+end
+local zx = Instance.new("Sound",workspace)
+zx.Volume = 10
+zx.SoundId = "rbxassetid://3283867155"
+zx.Pitch = 1
+zx.Name = "spf"
+zx:Play()
+for i = 1, 100 do
+	game:GetService("RunService").Stepped:wait()
+	littlekid.Volume = littlekid.Volume + .05
+	local randomtext = actualtext[math.random(1,#actualtext)]
+local t = text:Clone() t.Parent = script.Parent
+t.Rotation = math.random(-20,20)
+t.Position = UDim2.new(Random.new():NextNumber(0,1),0,Random.new():NextNumber(0,1),0)
+t.TextStrokeTransparency = 1
+t.TextTransparency = math.random(3,8.5)/10
+t.Text = randomtext
+coroutine.wrap(function()
+for i = 1, 20 do
+	t.TextTransparency = t.TextTransparency + .025
+	t.TextStrokeTransparency = t.TextStrokeTransparency + .025
+	game:GetService("RunService").Stepped:wait()
+end
+t:Destroy()
+end)()
+	hum.CameraOffset = Vector3.new(math.random(-5,5),math.random(-5,5),math.random(-5,5))
+	local a = math.random(1,2)
+	if a == 1 then
+	lig.ExposureCompensation = 100000
+	else
+		lig.ExposureCompensation =0
+		end
+end
+lig.ExposureCompensation =0
+hum.CameraOffset = Vector3.new(0,0,0)
+littlekid:Destroy()
+zx:Destroy()
+pcall(function()
+plr.Character:FindFirstChildOfClass("Humanoid"):Destroy()
+end)
+for i,v in pairs(plr.Character:GetDescendants()) do
+	if v:IsA("Part") or v:IsA("MeshPart") then
+		v.Transparency = .5
+		v.BrickColor = BrickColor.new("Really black")
+		v.Material = "Neon"
+		v.Anchored = true
+	end
+end
+plr.Character = nil
+script.Parent:Destroy()
+script:Destroy()
