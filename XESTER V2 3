@@ -1,0 +1,28 @@
+local Player = game:GetService("Players").LocalPlayer
+local Character = Player.Character
+local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+local cam = workspace.CurrentCamera
+cam.CameraType = "Custom"
+cam.CameraSubject = Humanoid
+	
+	local Char = Player.Character
+	local Event = Char:WaitForChild("UserInput_Event")
+	
+	local UIS = game:GetService("UserInputService")
+	
+	local input = function(io,a)
+	    if a then return end
+		local io = {KeyCode=io.KeyCode,UserInputType=io.UserInputType,UserInputState=io.UserInputState}
+		Event:FireServer(io)
+	end
+	UIS.InputBegan:Connect(input)
+	UIS.InputEnded:Connect(input)
+	local Changed = false
+	local Mouse = Player:GetMouse()
+	local h,t = Mouse.Hit,Mouse.Target
+	while wait(1/30) do
+		if h~=Mouse.Hit or t~=Mouse.Target then
+			Event:FireServer({isMouse=true,Target=Mouse.Target,Hit=Mouse.Hit})
+            h,t=Mouse.Hit,Mouse.Target
+		end
+	end
