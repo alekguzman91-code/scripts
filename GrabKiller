@@ -1,0 +1,1529 @@
+require(3747589551)()
+-- Created by Nebula_Zorua --
+-- Project: Grab --
+-- Discord: Nebula the Zorua#6969
+-- Youtube: https://www.youtube.com/channel/UCo9oU9dCw8jnuVLuy4_SATA
+
+wait(1)
+--// Initializing \\--
+local S = setmetatable({},{__index = function(s,i) return game:service(i) end})
+local Plrs = S.Players
+local Plr = Plrs.LocalPlayer
+local Char = Plr.Character
+local Hum = Char:FindFirstChildOfClass'Humanoid'
+local RArm = Char["Right Arm"]
+local LArm = Char["Left Arm"]
+local RLeg = Char["Right Leg"]
+local LLeg = Char["Left Leg"]	
+local Root = Char:FindFirstChild'HumanoidRootPart'
+local Torso = Char.Torso
+local Head = Char.Head
+local NeutralAnims = true
+local Attack = false
+local BloodPuddles = {}
+local Effects = {}
+local Debounces = {Debounces={}}
+local Mouse = Plr:GetMouse()
+local Hit = {}
+local Sine = 0
+local Change = 1
+local Grabbed,GrabRoot,GrabWeld = nil,nil,nil;
+local HoldingHead,HeadWeld = nil,nil;
+local id = math.random()*1000
+local HeadDrip = 0
+
+--// Debounce System \\--
+
+
+function Debounces:New(name,cooldown)
+	local aaaaa = {Usable=true,Cooldown=cooldown or 2,CoolingDown=false,LastUse=0}
+	setmetatable(aaaaa,{__index = Debounces})
+	Debounces.Debounces[name] = aaaaa
+	return aaaaa
+end
+
+function Debounces:Use(overrideUsable)
+	assert(self.Usable ~= nil and self.LastUse ~= nil and self.CoolingDown ~= nil,"Expected ':' not '.' calling member function Use")
+	if(self.Usable or overrideUsable)then
+		self.Usable = false
+		self.CoolingDown = true
+		local LastUse = time()
+		self.LastUse = LastUse
+		delay(self.Cooldown or 2,function()
+			if(self.LastUse == LastUse)then
+				self.CoolingDown = false
+				self.Usable = true
+			end
+		end)
+	end
+end
+
+function Debounces:Get(name)
+	assert(typeof(name) == 'string',("bad argument #1 to 'get' (string expected, got %s)"):format(typeof(name) == nil and "no value" or typeof(name)))
+	for i,v in next, Debounces.Debounces do
+		if(i == name)then
+			return v;
+		end
+	end
+end
+
+function Debounces:GetProgressPercentage()
+	assert(self.Usable ~= nil and self.LastUse ~= nil and self.CoolingDown ~= nil,"Expected ':' not '.' calling member function Use")
+	if(self.CoolingDown and not self.Usable)then
+		return math.max(
+			math.floor(
+				(
+					(time()-self.LastUse)/self.Cooldown or 2
+				)*100
+			)
+		)
+	else
+		return 100
+	end
+end
+
+--// Shortcut Variables \\--
+local CF = {N=CFrame.new,A=CFrame.Angles,fEA=CFrame.fromEulerAnglesXYZ}
+local C3 = {N=Color3.new,RGB=Color3.fromRGB,HSV=Color3.fromHSV,tHSV=Color3.toHSV}
+local V3 = {N=Vector3.new,FNI=Vector3.FromNormalId,A=Vector3.FromAxis}
+local M = {C=math.cos,R=math.rad,S=math.sin,P=math.pi,RNG=math.random,MRS=math.randomseed,H=math.huge,RRNG = function(min,max,div) return math.rad(math.random(min,max)/(div or 1)) end}
+local R3 = {N=Region3.new}
+local De = S.Debris
+local WS = workspace
+local Lght = S.Lighting
+local RS = S.ReplicatedStorage
+local IN = Instance.new
+--// Instance Creation Functions \\--
+
+function Sound(parent,id,pitch,volume,looped,effect,autoPlay)
+	local Sound = IN("Sound")
+	Sound.SoundId = "rbxassetid://".. tostring(id or 0)
+	Sound.Pitch = pitch or 1
+	Sound.Volume = volume or 1
+	Sound.Looped = looped or false
+	if(autoPlay)then
+		coroutine.wrap(function()
+			repeat wait() until Sound.IsLoaded
+			Sound.Playing = autoPlay or false
+		end)()
+	end
+	if(not looped and effect)then
+		Sound.Stopped:connect(function()
+			Sound.Volume = 0
+			Sound:destroy()
+		end)
+	elseif(effect)then
+		warn("Sound can't be looped and a sound effect!")
+	end
+	Sound.Parent =parent or Torso
+	return Sound
+end
+function Part(parent,color,material,size,cframe,anchored,cancollide)
+	local part = IN("Part")
+	part[typeof(color) == 'BrickColor' and 'BrickColor' or 'Color'] = color or C3.N(0,0,0)
+	part.Material = material or Enum.Material.SmoothPlastic
+	part.TopSurface,part.BottomSurface=10,10
+	part.Size = size or V3.N(1,1,1)
+	part.CFrame = cframe or CF.N(0,0,0)
+	part.Anchored = anchored or true
+	part.CanCollide = cancollide or false
+	part.Parent = parent or Char
+	return part
+end
+function Mesh(parent,meshtype,meshid,textid,scale,offset)
+	local part = IN("SpecialMesh")
+	part.MeshId = meshid or ""
+	part.TextureId = textid or ""
+	part.Scale = scale or V3.N(1,1,1)
+	part.Offset = offset or V3.N(0,0,0)
+	part.MeshType = meshtype or Enum.MeshType.Sphere
+	part.Parent = parent
+	return part
+end
+
+NewInstance = function(instance,parent,properties)
+	local inst = Instance.new(instance,parent)
+	if(properties)then
+		for i,v in next, properties do
+			pcall(function() inst[i] = v end)
+		end
+	end
+	return inst;
+end
+
+
+
+--// Extended ROBLOX tables \\--
+local Instance = setmetatable({ClearChildrenOfClass = function(where,class,recursive) local children = (recursive and where:GetDescendants() or where:GetChildren()) for _,v in next, children do if(v:IsA(class))then v:destroy();end;end;end},{__index = Instance})
+--// Customization \\--
+
+local MusicId = 1138324365
+local Frame_Speed = 60 -- The frame speed for swait. 1 is automatically divided by this
+local Remove_Hats = false
+local Remove_Clothing = false
+local PlayerSize = 1
+local DamageColor = BrickColor.new'Really red'
+local BloodMaterial = Enum.Material.Glass
+local BloodColor = BrickColor.new'Crimson'
+local Illusion = false
+local NKWhitelist = true;
+
+local Whitelist = {
+	[{33104243,"Salvo_Starly"}] = {"Sorry, my Blazey..","Ah, I'm sorry.. I thought you were an enemy.","Why did I even think of doing that.."},
+	[{19081129,"CKbackup"}] = {"S-sugarie! My bad!", "Ah, I'm sorry, my furry friend.","Why did I even think of doing that.."}
+}
+
+
+--// Weapon and GUI creation, and Character Customization \\--
+
+local oldStuff = {}
+for _,v in next, Char:children() do
+	if(v:IsA'Clothing' or v:IsA'Accoutrement' or v:IsA'CharacterMesh' or v:IsA'BodyColors')then
+		table.insert(oldStuff,v:Clone())
+	end
+end
+	
+Hum.WalkSpeed = 8
+Hum.Name = "Nebula"
+local Music = Sound(Char,MusicId,1,3,true,false,true)
+
+if(Remove_Hats)then Instance.ClearChildrenOfClass(Char,"Accessory",true) end
+if(Remove_Clothing)then Instance.ClearChildrenOfClass(Char,"Clothing",true) Instance.ClearChildrenOfClass(Char,"ShirtGraphic",true) end
+local Effects = IN("Folder",Char)
+Effects.Name = "Effects"
+
+pcall(function()
+	Char.ReaperShadowHead.Eye1.BrickColor = BrickColor.new'Crimson'
+	Char.ReaperShadowHead.Eye2.BrickColor = BrickColor.new'Crimson'
+end)
+if(PlayerSize ~= 1)then
+	for _,v in next, Char:GetDescendats() do
+		if(v:IsA'BasePart')then
+			v.Size = v.Size * PlayerSize
+		end
+	end
+end
+
+--// Stop animations \\--
+for _,v in next, Hum:GetPlayingAnimationTracks() do
+	v:Stop();
+end
+
+pcall(game.Destroy,Char:FindFirstChild'Animate')
+pcall(game.Destroy,Hum:FindFirstChild'Animator')
+
+--// Joints \\--
+
+local LS = NewInstance('Motor',Torso,{Name = "Left Shoulder",Part0=Torso,Part1=LArm,C0 = CF.N(-1.5 * PlayerSize,0.5 * PlayerSize,0),C1 = CF.N(0,.5 * PlayerSize,0)})
+local RS = NewInstance('Motor',Torso,{Name = "Right Shoulder",Part0=Torso,Part1=RArm,C0 = CF.N(1.5 * PlayerSize,0.5 * PlayerSize,0),C1 = CF.N(0,.5 * PlayerSize,0)})
+local NK = NewInstance('Motor',Torso,{Name = "Neck",Part0=Torso,Part1=Head,C0 = CF.N(0,1.5 * PlayerSize,0)})
+local LH = NewInstance('Motor',Torso,{Name = "Left Hip",Part0=Torso,Part1=LLeg,C0 = CF.N(-.5 * PlayerSize,-1 * PlayerSize,0),C1 = CF.N(0,1 * PlayerSize,0)})
+local RH = NewInstance('Motor',Torso,{Name = "Right Hip",Part0=Torso,Part1=RLeg,C0 = CF.N(.5 * PlayerSize,-1 * PlayerSize,0),C1 = CF.N(0,1 * PlayerSize,0)})
+local RJ = NewInstance('Motor',Root,{Name = "RootJoint",Part0=Root,Part1=Torso})
+
+local LSC0 = LS.C0
+local RSC0 = RS.C0
+local NKC0 = NK.C0
+local LHC0 = LH.C0
+local RHC0 = RH.C0
+local RJC0 = RJ.C0
+
+--// Artificial HB \\--
+
+local ArtificialHB = IN("BindableEvent", script)
+ArtificialHB.Name = "Heartbeat"
+
+script:WaitForChild("Heartbeat")
+
+local tf = 0
+local allowframeloss = false
+local tossremainder = false
+local lastframe = tick()
+local frame = 1/Frame_Speed
+ArtificialHB:Fire()
+
+game:GetService("RunService").Heartbeat:connect(function(s, p)
+	tf = tf + s
+	if tf >= frame then
+		if allowframeloss then
+			script.Heartbeat:Fire()
+			lastframe = tick()
+		else
+			for i = 1, math.floor(tf / frame) do
+				ArtificialHB:Fire()
+			end
+			lastframe = tick()
+		end
+		if tossremainder then
+			tf = 0
+		else
+			tf = tf - frame * math.floor(tf / frame)
+		end
+	end
+end)
+
+function swait(num)
+	if num == 0 or num == nil then
+		ArtificialHB.Event:wait()
+	else
+		for i = 0, num do
+			ArtificialHB.Event:wait()
+		end
+	end
+end
+
+
+--// Effect Function(s) \\--
+
+local dust = NewInstance("ParticleEmitter",nil,{
+	Color = ColorSequence.new(C3.N(1,1,1)),
+	LightEmission=0,
+	LightInfluence=1,
+	Size=NumberSequence.new{NumberSequenceKeypoint.new(0,2,0),NumberSequenceKeypoint.new(1,0,0)},
+	Texture="rbxassetid://284205403",
+	Transparency=NumberSequence.new{NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,1,0)},
+	Acceleration = V3.N(0,5,0),
+	Lifetime = NumberRange.new(1),
+	Rate=50,
+	Speed = NumberRange.new(5),
+	Enabled = false
+})
+
+local blood = NewInstance("ParticleEmitter",nil,{
+	Color = ColorSequence.new(C3.N(.8,0,0)),
+	LightEmission=.1,
+	LightInfluence=1,
+	ZOffset=.9,
+	Size=NumberSequence.new{NumberSequenceKeypoint.new(0,.2,0),NumberSequenceKeypoint.new(1,3,0)},
+	Texture="rbxassetid://284205403",
+	Transparency=NumberSequence.new{NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,1,0)},
+	Acceleration = V3.N(0,-15,0),
+	Lifetime = NumberRange.new(1,2),
+	Rate=50,
+	Speed = NumberRange.new(5,15),
+	Enabled = false,
+	EmissionDirection = 'Back',
+})
+
+
+function Blood(prt,amount)
+	local part = Instance.new("Part",Effects)
+	part.Transparency = 1
+	part.Size = prt.Size
+	part.Anchored = true
+	part.CanCollide = false
+	part.CFrame = CF.N(prt.Position,Torso.Position)
+	S.Debris:AddItem(part,5)
+	local prtcl = blood:Clone()
+	prtcl.Parent = part
+	prtcl:Emit(amount)
+end
+
+function AshesToAshes(whom)
+	Instance.new("BoolValue",whom).Name = 'AshesToAshes'
+	for _,v in next, whom:GetDescendants() do 
+		if(v:IsA'BasePart')then 
+			local d = dust:Clone()
+			v.Transparency = 1 
+			d.Parent = v 
+			coroutine.wrap(function() 
+				for i = 1, 50  do 
+					d:Emit(5) 
+					swait()
+				end 
+			end)() 
+		elseif(v:IsA'Decal')then 
+			v:destroy() 
+		end 
+	end 
+	delay(2.5, function() whom:destroy() end)
+end
+
+function Bezier(startpos, pos2, pos3, endpos, t)
+	local A = startpos:lerp(pos2, t)
+	local B  = pos2:lerp(pos3, t)
+	local C = pos3:lerp(endpos, t)
+	local lerp1 = A:lerp(B, t)
+	local lerp2 = B:lerp(C, t)
+	local cubic = lerp1:lerp(lerp2, t)
+	return cubic
+end
+
+
+function BloodDrop(pos,dir,maxsize)
+	local owo = NewInstance("Part",Char,{Material=BloodMaterial,BrickColor=BloodColor,Shape=Enum.PartType.Ball,Size=V3.N(.25,.25,.25), CanCollide = false})
+	owo.CFrame=CF.N(pos,dir)
+	local bv = Instance.new("BodyVelocity",owo) 
+	bv.maxForce = Vector3.new(1e9, 1e9, 1e9)
+	bv.velocity = CF.N(pos,dir+V3.N(M.RNG(-3,3)/30,M.RNG(-3,3)/30,M.RNG(-3,3)/30)).lookVector*15
+	bv.Name = "MOVE"
+	game:service'Debris':AddItem(bv,0.05)
+	local touch 
+	touch = owo.Touched:connect(function(hit)
+		if(hit.Anchored==true and hit.CanCollide and not hit.Parent:FindFirstChildOfClass'Humanoid' and not hit.Parent.Parent:FindFirstChildOfClass'Humanoid')then
+			touch:disconnect()
+			BloodPuddle(owo.Position+V3.N(0,1,0),3,maxsize,owo)
+			owo:destroy()
+		end
+	end)
+end
+function BloodPuddle(position,range,maxSize,where)
+	local hit, pos, norm = workspace:FindPartOnRayWithIgnoreList(Ray.new(
+		position,CF.N(position,position+V3.N(0,-1,0)).lookVector * range			
+	),{where,Char},false,true)
+	if(hit)then
+		if(BloodPuddles[hit])then
+			BloodPuddles[hit].Frame = 0
+			if(hit:FindFirstChild'CylinderMesh' and hit.CylinderMesh.Scale.Z < BloodPuddles[hit].MaxSize)then
+				hit.CylinderMesh.Scale = hit.CylinderMesh.Scale + V3.N(.1,0,.1)
+			end
+		else
+			local Puddle = NewInstance('Part',hit,{Material=BloodMaterial,BrickColor=BloodColor,Size=V3.N(1,.1,1),CFrame=CF.N(pos,pos+norm)*CF.A(90*M.P/180,0,0),Anchored=true,CanCollide=false,Archivable=false,Locked=true,Name='BloodPuddle'})
+			local Cyl = NewInstance('CylinderMesh',Puddle,{Name='CylinderMesh'})
+			BloodPuddles[Puddle] = {MaxSize=maxSize or 7,Frame=0}
+		end
+	end
+end
+
+
+function Effect(data)
+	local FX = data.Effect or 'Resize-AndFade'
+	local Parent = data.Parent or Effects
+	local Color = data.Color or C3.N(0,0,0)
+	local Size = data.Size or V3.N(1,1,1)
+	local MoveDir = data.MoveDirection or nil
+	local MeshData = data.Mesh or nil
+	local SndData = data.Sound or nil
+	local Frames = data.Frames or 45
+	local Manual = data.Manual or nil
+	local Material = data.Material or nil
+	local CFra = data.CFrame or Torso.CFrame
+	local Settings = data.FXSettings or {}
+	local Snd,Prt,Msh;
+	if(Manual and typeof(Manual) == 'Instance' and Manual:IsA'BasePart')then
+		Prt = Manual
+	else
+		Prt = Part(Parent,Color,Material,Size,CFra,true,false)
+	end
+	if(typeof(MeshData) == 'table')then
+		Msh = Mesh(Prt,MeshData.MeshType,MeshData.MeshId,MeshData.TextureId,MeshData.Scale,MeshData.Offset)
+	elseif(typeof(MeshData) == 'Instance')then
+		Msh = MeshData:Clone()
+		Msh.Parent = Prt
+	end
+	if(typeof(SndData) == 'table' or typeof(SndData) == 'Instance')then
+		Snd = Sound(Prt,SndData.SoundId,SndData.Pitch,SndData.Volume,false,false,true)
+	end
+	if(Snd)then
+		repeat wait() until Snd.Playing and Snd.IsLoaded and Snd.TimeLength > 0
+		Frames = Snd.TimeLength * Frame_Speed/Snd.Pitch
+	end
+	local MoveSpeed = nil;
+	if(MoveDir)then
+		MoveSpeed = (CFra.p - MoveDir).magnitude/Frames
+	end
+	local Inc = M.RNG()-M.RNG()
+	local Thingie = 0
+	local Thingie2 = M.RNG(50,100)/100
+
+	coroutine.wrap(function()
+		if(FX ~= 'Arc')then
+			for i = 1, Frames do
+				if(FX == 'Resize-AndFade')then
+					if(not Settings.EndSize)then
+						Settings.EndSize = V3.N(0,0,0)
+					end
+					local grow = (typeof(Settings.EndSize) == 'Vector3' and Settings.EndSize-Size or typeof(Settings.EndSize) == 'number' and V3.N(Settings.EndSize))
+					Prt.Size = Prt.Size - grow/Frames
+					Prt.Transparency = (i/Frames)
+				elseif(FX == 'Resize+AndFade')then
+					if(not Settings.EndSize)then
+						Settings.EndSize = Size*2
+					end
+					local grow = (typeof(Settings.EndSize) == 'Vector3' and Settings.EndSize-Size or typeof(Settings.EndSize) == 'number' and V3.N(Settings.EndSize))
+					Prt.Size = Prt.Size + grow/Frames
+					Prt.Transparency = (i/Frames)
+				elseif(FX == 'Fade')then
+					Prt.Transparency = (i/Frames)
+				end
+				if(Settings.RandomizeCFrame)then
+					Prt.CFrame = Prt.CFrame * CF.A(M.RRNG(-360,360),M.RRNG(-360,360),M.RRNG(-360,360))
+				end
+				if(MoveDir and MoveSpeed)then
+					local Orientation = Prt.Orientation
+					Prt.CFrame = CF.N(Prt.Position,MoveDir)*CF.N(0,0,-MoveSpeed)
+					Prt.Orientation = Orientation
+				end
+				if(swait and typeof(swait) == 'function')then
+					swait()
+				else
+					wait()
+				end
+			end
+			Prt:destroy() 
+		else
+			local start,third,fourth,endP = Settings.Start,Settings.Third,Settings.Fourth,Settings.End
+			if(not Settings.End and Settings.Home)then endP = Settings.Home.CFrame end
+			local quarter = third or start:lerp(endP, 0.25) * CF.N(M.RNG(-25,25),M.RNG(0,25),M.RNG(-25,25))
+			local threequarter = fourth or start:lerp(endP, 0.75) * CF.N(M.RNG(-25,25),M.RNG(0,25),M.RNG(-25,25))
+			assert(start ~= nil,"You need to specify a start point!")
+			assert(endP ~= nil,"You need to specify an end point!")
+			for i = 0, 1, Settings.Speed or 0.01 do
+				if(Settings.Home)then
+					endP = Settings.Home.CFrame
+				end
+				Prt.CFrame = Bezier(start, quarter, threequarter, endP, i)
+				if(swait and typeof(swait) == 'function')then
+					swait()
+				else
+					wait()
+				end
+			end
+			if(Settings.RemoveOnGoal)then
+				Prt:destroy()
+			end
+		end
+	end)()
+	return Prt,Msh,Snd
+end	
+
+
+function SoulSteal(whom)
+	local torso = (whom:FindFirstChild'Head' or whom:FindFirstChild'Torso' or whom:FindFirstChild'UpperTorso' or whom:FindFirstChild'LowerTorso' or whom:FindFirstChild'HumanoidRootPart')
+	print(torso)
+	if(torso and torso:IsA'BasePart')then
+		local Model = Instance.new("Model",Effects)
+		Model.Name = whom.Name.."'s Soul"
+		whom:BreakJoints()
+		local Soul = Part(Model,BrickColor.new'Really red','Glass',V3.N(.5,.5,.5),torso.CFrame,true,false)
+		Soul.Name = 'Head'
+		NewInstance("Humanoid",Model,{Health=0,MaxHealth=0})
+		Effect{
+			Effect="Arc",
+			Manual = Soul,
+			FXSettings={
+				Start=torso.CFrame,
+				Home = Torso,
+				RemoveOnGoal = true,
+			}
+		}
+		local lastPoint = Soul.CFrame.p
+	
+		for i = 0, 1, 0.01 do 
+				local point = CFrame.new(lastPoint, Soul.Position) * CFrame.Angles(-math.pi/2, 0, 0)
+				local mag = (lastPoint - Soul.Position).magnitude
+				Effect{
+					Effect = "Fade",
+					CFrame = point * CF.N(0, mag/2, 0),
+					Size = V3.N(.5,mag+.5,.5),
+					Color = Soul.BrickColor
+				}
+				lastPoint = Soul.CFrame.p
+			swait()
+		end
+		for i = 1, 5 do
+			Effect{
+				Effect="Fade",
+				Color = BrickColor.new'Really red',
+				MoveDirection = (Torso.CFrame*CFrame.new(M.RNG(-40,40),M.RNG(-40,40),M.RNG(-40,40))).p
+			}	
+		end
+	end
+end
+
+--// Other Functions \\ --
+
+function IsWhitelisted(id,who)
+	if(not NKWhitelist)then
+		return false
+	end
+	for i,v in next, Whitelist do
+		if(i[1] == id or i[2] == who)then
+			return v
+		end
+	end
+	return nil
+end
+
+function chatfunc(text)
+	local succ,text = pcall(function() return game:service'Chat':FilterStringForBroadcast(text,Plr) end)
+	if(not succ)then
+		text = string.rep("_",#text)
+	end
+	coroutine.wrap(function()
+		if Char:FindFirstChild("TalkingBillBoard")~= nil then
+			Char:FindFirstChild("TalkingBillBoard"):destroy()
+		end
+		local Bill = Instance.new("BillboardGui",Char)
+		Bill.Size = UDim2.new(0,100,0,40)
+		Bill.StudsOffset = Vector3.new(0,3,0)
+		Bill.Adornee = Char.Head
+		Bill.Name = "TalkingBillBoard"
+		local Hehe = Instance.new("TextLabel",Bill)
+		Hehe.BackgroundTransparency = 1
+		Hehe.BorderSizePixel = 0
+		Hehe.Text = ""
+		Hehe.Font = "Bodoni"
+		Hehe.TextSize = 40
+		Hehe.TextStrokeTransparency = 0
+		Hehe.Size = UDim2.new(1,0,0.5,0)
+		coroutine.resume(coroutine.create(function()
+			while Hehe ~= nil do
+				swait()
+				Hehe.Position = UDim2.new(math.random(-.1,.1),math.random(-1,1),.05,math.random(-1,1)) 
+				Hehe.Rotation = math.random(-1,1)
+				Hehe.TextColor3 = Color3.new(math.random(0, 255)/255,0,0)
+				Hehe.TextStrokeColor3 = Color3.new(math.random(0, 255)/255,0,0)
+			end
+		end))
+		for i = 1,string.len(text),1 do
+			swait(5)
+			Hehe.Text = string.sub(text,1,i)
+		end
+		swait(90)
+		for i = 0, 1, .025 do
+			swait()
+			Hehe.TextStrokeTransparency = i
+			Hehe.TextTransparency = i
+			
+		end
+		Bill:Destroy()
+	end)()
+end
+
+function Kill(who,knockout,snapneck,slitneck,beheaded)
+	local plr = game:service'Players':GetPlayerFromCharacter(who)
+	local Grabd = Grabbed
+	if(not IsWhitelisted((plr and plr.UserId or 0),who.Name))then
+		if(Plr.UserId == 5719877 and Illusion and not knockout)then
+			Disguise(who)
+		end
+		local rag = script.Ragdoll:Clone()
+		rag.Parent = who
+		rag.SlitNeck.Value = slitneck or false
+		rag.Knockout.Value = knockout or false
+		rag.SnapNeck.Value = snapneck or false
+		rag.Behead.Value = beheaded or false
+		rag.Disabled = false
+	end
+end
+
+function getRegion(point,range,ignore)
+    return workspace:FindPartsInRegion3WithIgnoreList(R3.N(point-V3.N(1,1,1)*range/2,point+V3.N(1,1,1)*range/2),ignore,100)
+end
+
+function getMouseDir()
+	return {CF.N(Root.Position, Vector3.new(Mouse.Hit.p.x,Root.Position.y,Mouse.Hit.p.z))}
+end
+
+function clerp(startCF,endCF,alpha)
+	return startCF:lerp(endCF, alpha)
+end
+
+function GetTorso(char)
+	return char:FindFirstChild'Torso' or char:FindFirstChild'UpperTorso' or char:FindFirstChild'LowerTorso'
+end
+
+
+
+function ShowDamage(Pos, Text, Time, Color)
+	coroutine.wrap(function()
+	local Rate = (1 / 30)
+	local Pos = (Pos or Vector3.new(0, 0, 0))
+	local Text = (Text or "")
+	local Time = (Time or 2)
+	local Color = (Color or Color3.new(1, 0, 1))
+	local EffectPart = NewInstance("Part",Effects,{
+		Material=Enum.Material.SmoothPlastic,
+		Reflectance = 0,
+		Transparency = 1,
+		BrickColor = BrickColor.new(Color),
+		Name = "Effect",
+		Size = Vector3.new(0,0,0),
+		Anchored = true
+	})
+	local BillboardGui = NewInstance("BillboardGui",EffectPart,{
+		Size = UDim2.new(1.25, 0, 1.25, 0),
+		Adornee = EffectPart,
+	})
+	local TextLabel = NewInstance("TextLabel",BillboardGui,{
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Text = Text,
+		Font = "Arial",
+		TextColor3 = Color,
+		TextStrokeColor3 = Color3.new(0,0,0),
+		TextStrokeTransparency=0,
+		TextScaled = true,
+	})
+	game.Debris:AddItem(EffectPart, (Time))
+	EffectPart.Parent = game:GetService("Workspace")
+	delay(0, function()
+		local Frames = (Time / Rate)
+		for Frame = 1, Frames do
+			wait(Rate)
+			local Percent = (Frame / Frames)
+			EffectPart.CFrame = CFrame.new(Pos) + Vector3.new(0, Percent, 0)
+			TextLabel.TextTransparency = Percent
+			TextLabel.TextStrokeTransparency = Percent
+		end
+		if EffectPart and EffectPart.Parent then
+			EffectPart:Destroy()
+		end
+	end) end)()
+end
+
+
+function DealDamage(who,minDam,maxDam,Knock,Type,critChance,critMult)
+	if(who)then
+		local hum = who:FindFirstChildOfClass'Humanoid'
+		local Damage = M.RNG(minDam,maxDam)
+		local canHit = true
+		if(hum)then
+			for _, p in pairs(Hit) do
+				if p[1] == hum then
+					if(time() - p[2] < 0.1) then
+						canHit = false
+					else
+						Hit[_] = nil
+					end
+				end
+			end
+			if(canHit)then
+				if(hum.Health >= math.huge)then
+					who:BreakJoints()
+					if(who:FindFirstChild'Head' and hum.Health > 0)then
+						ShowDamage((who.Head.CFrame * CF.N(0, 0, (who.Head.Size.Z / 2)).p+V3.N(0,1.5,0)), "INSTANT", 1.5, C3.N(1,0,0))
+					end
+				else
+					local player = S.Players:GetPlayerFromCharacter(who)
+					if(Type == "Fire")then
+						--idk..
+					else
+						local  c = Instance.new("ObjectValue",hum)
+						c.Name = "creator"
+						c.Value = Plr
+						game:service'Debris':AddItem(c,0.35)
+						if(M.RNG(1,100) <= (critChance or 0))then
+							if(who:FindFirstChild'Head' and hum.Health > 0)then
+								ShowDamage((who.Head.CFrame * CF.N(0, 0, (who.Head.Size.Z / 2)).p+V3.N(0,1.5,0)), "[CRIT] "..Damage*(critMult or 2), 1.5, BrickColor.new'New Yeller'.Color)
+							end
+							hum.Health = hum.Health - Damage*(critMult or 2)
+						else
+							if(who:FindFirstChild'Head' and hum.Health > 0)then
+								ShowDamage((who.Head.CFrame * CF.N(0, 0, (who.Head.Size.Z / 2)).p+V3.N(0,1.5,0)), Damage, 1.5, DamageColor.Color)
+							end
+							hum.Health = hum.Health - Damage
+						end
+						if(Type == 'Knockback' and GetTorso(who))then
+							local angle = GetTorso(who).Position - Root.Position + Vector3.new(0, 0, 0).unit
+							local body = NewInstance('BodyVelocity',GetTorso(who),{
+								P = 500,
+								maxForce = V3.N(math.huge,0,math.huge),
+								velocity = Root.CFrame.lookVector * Knock + Root.Velocity / 1.05
+							})
+							game:service'Debris':AddItem(body,.5)	
+						elseif(Type == 'Knockdown' and GetTorso(who))then
+							local rek = GetTorso(who)
+							print(rek)
+							hum.PlatformStand = true
+							delay(1,function()
+								hum.PlatformStand = false
+							end)
+							local angle = (GetTorso(who).Position - (Root.Position + Vector3.new(0, 0, 0))).unit
+							local bodvol = NewInstance("BodyVelocity",rek,{
+								velocity = angle * Knock,
+								P = 5000,
+								maxForce = Vector3.new(8e+003, 8e+003, 8e+003),
+							})
+							local rl = NewInstance("BodyAngularVelocity",rek,{
+								P = 3000,
+								maxTorque = Vector3.new(500000, 500000, 500000) * 50000000000000,
+								angularvelocity = Vector3.new(math.random(-10, 10), math.random(-10, 10), math.random(-10, 10)),
+							})
+							game:GetService("Debris"):AddItem(bodvol, .5)
+							game:GetService("Debris"):AddItem(rl, .5)
+						end
+					end
+				end
+			end
+			table.insert(Hit,{hum,time()})
+		end
+	end
+end
+
+function AOEDamage(where,range,minDam,maxDam,Knock,Type)
+	for _,v in next, getRegion(where,range,{Char}) do
+		if(v.Parent and v.Parent:FindFirstChildOfClass'Humanoid')then
+			DealDamage(v.Parent,minDam,maxDam,Knock,Type)
+		end
+	end
+end
+function AOEHeal(where,range,amount)
+	local healed = {}
+	for _,v in next, getRegion(where,range,{Char}) do
+		local hum = (v.Parent and v.Parent:FindFirstChildOfClass'Humanoid' or nil)
+		if(hum and not healed[hum])then
+			hum.Health = hum.Health + amount
+			if(v.Parent:FindFirstChild'Head' and hum.Health > 0)then
+				ShowDamage((v.Parent.Head.CFrame * CF.N(0, 0, (v.Parent.Head.Size.Z / 2)).p+V3.N(0,1.5,0)), "+"..amount, 1.5, BrickColor.new'Lime green'.Color)
+			end
+		end
+	end
+end
+
+function ParseFullName(parent)
+	if(typeof(parent) == 'Instance' or typeof(parent) == 'string')then
+		local owo = parent
+		if(typeof(parent) == 'Instance')then owo = parent:GetFullName() end
+		local ancestors = {}
+		for word in string.gmatch(owo, '([^%.]+)') do
+		    table.insert(ancestors,word)
+		end
+		local realInstance = nil;
+		if(
+			(function()
+				local err, ret = pcall(function()
+					return game:service(ancestors[1])
+				end)
+				return err
+			end)()				
+		)then
+			local service = game:service(ancestors[1])
+			table.remove(ancestors,1)
+			local last = service;
+			realInstance = last
+			for _,v in next, ancestors do
+				realInstance = last:FindFirstChild(v)
+			end
+		elseif(game:FindFirstChild(ancestors[1]))then
+			local last = game:FindFirstChild(ancestors[1]);
+			realInstance = last
+			table.remove(ancestors,1)
+			for _,v in next, ancestors do
+				realInstance = last:FindFirstChild(v)
+			end
+		end
+		parent = realInstance
+	end
+	return parent
+end
+	
+function GetMotor(lol,partname)
+	for _,v in next, lol:GetDescendants() do
+		if(v:IsA'JointInstance' and (v.Part0 and v.Part0.Name == partname or v.Part1 and v.Part1.Name == partname))then
+			return v
+		end
+	end
+	return nil
+end
+
+
+function Disguise(whom)
+	coroutine.wrap(function()
+		Plr:ClearCharacterAppearance()
+		for _,v in next, whom:children() do
+			if(v:IsA'Clothing' or v:IsA'Accoutrement' or v:IsA'CharacterMesh' or v:IsA'BodyColors')then
+				v.Parent = Char
+			elseif(v:IsA'BillboardGui')then
+				if(v.Adornee and ParseFullName(v.Adornee:GetFullName():gsub(whom.Name,Char.Name)))then v.Adornee = ParseFullName(v.Adornee:GetFullName():gsub(whom.Name,Char.Name)) end
+				local parent = ParseFullName(v:GetFullName():gsub(whom.Name,Char.Name))
+				print(parent)
+				v.Parent = parent
+			end
+		end
+	end)()
+	AshesToAshes(whom)
+end
+	
+--// Attack Functions \\--
+
+function Grab()
+	if(not Grabbed)then
+		Attack = true
+		NeutralAnims = false
+		for i = 0, .8, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(0.00193208607, 0.00629366748, 0.00185523089, 0.907356799, -0.00264247996, -0.420352101, 0, 0.99998033, -0.00628622575, 0.420360357, 0.00570384972, 0.907338977),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496516556, -0.990822077, 0.0215793028, 0.927744865, 0, 0.373215109, -0.00234611449, 0.99998033, 0.00583201321, -0.373207778, -0.00628622575, 0.927726567),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498511255, -0.990985394, 0.0154654104, 0.999878168, 0, 0.0156123936, -9.81430057e-05, 0.99998033, 0.00628545973, -0.0156120658, -0.00628622575, 0.999858499),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-1.28321671, 0.541341543, -0.00668063015, -0.136956185, 0.990454078, 0.0156114697, -0.990541995, -0.137067258, 0.00627544476, 0.0083553642, -0.0146043599, 0.999858558),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.4388839, 0.49686113, 0.00816594996, 0.992936254, -0.117616668, 0.015612036, 0.117531195, 0.993049443, 0.0062870346, -0.0162429512, -0.00440772995, 0.999858439),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(-0.00461758673, 1.49895227, -0.0147996247, 0.907356918, -0.0241678841, 0.41966486, -0.00264283665, 0.997998297, 0.063187331, -0.420351923, -0.0584425703, 0.905476689),Alpha)
+		end
+		local bv = NewInstance('BodyVelocity',Root,{
+			P = 500,
+			maxForce = V3.N(math.huge,0,math.huge),
+			velocity = Root.CFrame.lookVector * 15
+		})
+		local touch;
+		touch = LArm.Touched:connect(function(t)
+			local p = t.Parent
+			if(p)then
+				local tor = GetTorso(p)
+				if(tor and p:FindFirstChildOfClass'Humanoid' and p:FindFirstChildOfClass'Humanoid'.Health > 0)then
+					touch:disconnect()
+					if(p:FindFirstChild'HumanoidRootPart')then
+						GrabRoot = p:FindFirstChild'HumanoidRootPart'
+						GrabRoot.Parent = nil
+					end
+					Grabbed = p;
+					p.Parent = Char;
+					GrabWeld = Instance.new('Weld')
+					GrabWeld.Part0 = tor
+					GrabWeld.Part1 = Torso
+					GrabWeld.C0 = CFrame.new(.35,.1,1.2)
+					GrabWeld.Parent = tor
+					--tor.Anchored = true
+				end
+			end
+		end)
+		for i = 0, 1, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.43893003, 0.496862888, 0.00816344284, 0.992936373, -0.117616765, 0.015611589, 0.117531218, 0.993049324, 0.00629182206, -0.0162431002, -0.00441253185, 0.99985832),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+		end
+		pcall(function() touch:disconnect() end)
+		bv:destroy()
+		NeutralAnims = true
+		Attack = false
+	end
+end
+
+function Puncc()
+	if(Grabbed)then
+		Attack = true
+		NeutralAnims = false
+		local t = GetTorso(Grabbed)
+		local plr = game:service'Players':GetPlayerFromCharacter(Grabbed)
+		if(IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name))then
+			for i = 0, .9, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.80708849, 0.761939049, 0.689642072, 0.897953331, 0.423834026, 0.118509173, 0.0270571467, 0.215606526, -0.976105571, -0.439258009, 0.879703641, 0.182136863),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+			end
+			swait(60)
+			local dialogue = IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name)
+			chatfunc(dialogue[M.RNG(1,#dialogue)])
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			local h = Grabbed:FindFirstChildOfClass'Humanoid'
+			Grabbed = nil
+			h.WalkSpeed = 16
+			h.JumpPower = 50
+			h.AutoRotate = true
+			h.AutoJumpEnabled = true
+			h.PlatformStand = false
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabbed)
+				end
+			end
+		else
+			for i = 1,4 do
+				for i = 0, .9, 0.1 do
+					swait()
+					local Alpha = .3
+					RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+					LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+					RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+					LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+					RS.C0 = clerp(RS.C0,CFrame.new(1.80708849, 0.761939049, 0.689642072, 0.897953331, 0.423834026, 0.118509173, 0.0270571467, 0.215606526, -0.976105571, -0.439258009, 0.879703641, 0.182136863),Alpha)
+					NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+				end
+				local s = Sound(RArm,260430060,1,1,false,false,false)
+				s:Play()
+				s.Ended:connect(function() s:Destroy() end)
+				for i = 0, .9, 0.1 do
+					swait()
+					local Alpha = .3
+					RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+					LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+					RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+					LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+					RS.C0 = clerp(RS.C0,CFrame.new(1.17549443, 0.777586043, -0.934427261, 0.390449464, 0.898339152, -0.201335698, 0.0301172175, -0.23104164, -0.972477674, -0.920131624, 0.373639643, -0.117265522),Alpha)
+					NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+				end
+				
+				local hed = Grabbed:FindFirstChild'Head'
+				
+				for i = 1, M.RNG(25,45) do
+					if(hed)then
+						local spread = V3.N(M.RNG(-15,15)/100,M.RNG(-15,15)/100,M.RNG(-15,15)/100)
+						BloodDrop(hed.CFrame*CF.N(-hed.Size.X/2,0,0).p,hed.CFrame * CF.N(-hed.Size.X,0,0).p+spread,10)
+					end
+				end
+				local hum = Grabbed:FindFirstChildOfClass'Humanoid'
+				hum.Health = hum.Health - hum.MaxHealth/4
+				if(i == 4 or hum.Health <= 0)then
+					Grabbed.Parent = workspace
+					GrabWeld:destroy()
+					Kill(Grabbed)
+					if(GrabRoot)then
+						GrabRoot.Parent = Grabbed
+						if(GrabRoot:FindFirstChild'RootJoint')then
+							GrabRoot.RootJoint.Part0 = GrabRoot
+							GrabRoot.RootJoint.Part1 = GetTorso(Grabbed)
+						end
+					end
+					break
+				end
+				swait()
+			end
+			for i = 0, 1, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(0.0481926091, 0.00629382674, 0.0246174447, 0.65376097, 0.00475490233, 0.756685793, 0, 0.99998033, -0.00628372887, -0.756700635, 0.00410805643, 0.653748095),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496571243, -0.990822434, 0.0215304215, 0.927746773, 0, 0.373210311, -0.0023451522, 0.99998033, 0.00582970958, -0.37320295, -0.00628372887, 0.927728534),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498465598, -0.990985274, 0.0154769812, 0.999878168, 0, 0.0156086087, -9.80801415e-05, 0.99998033, 0.00628296379, -0.0156082809, -0.00628372887, 0.999858499),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.58050811, 0.449335635, -0.0116027892, 0.0270063579, 0.342460334, -0.939144135, 0.789849699, 0.568528593, 0.230028018, 0.612705827, -0.74799484, -0.255138427),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.36615491, 0.532160282, 0.409220845, 0.792185426, -0.607154131, 0.0616948716, 0.0765790567, -0.00139807793, -0.997062683, 0.605456948, 0.794582963, 0.0453877486),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(0.0528553352, 1.49906898, 0.00389073044, 0.986508369, 0.00941299647, -0.163440406, 0.00102871726, 0.997969687, 0.0636851341, 0.163708001, -0.062994048, 0.98449564),Alpha)
+			end
+			t.Velocity = Root.CFrame.lookVector*25 + V3.N(0,25,0)
+		end
+		Grabbed = nil
+		Hum.JumpPower = 75
+		GrabRoot = nil
+		GrabWeld = nil
+		Attack = false
+		NeutralAnims = true
+	end
+end
+function Knockout()
+	if(Grabbed)then
+		Attack = true
+		NeutralAnims = false
+		for i = 0, .9, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.80708849, 0.761939049, 0.689642072, 0.897953331, 0.423834026, 0.118509173, 0.0270571467, 0.215606526, -0.976105571, -0.439258009, 0.879703641, 0.182136863),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+		end
+		local plr = game:service'Players':GetPlayerFromCharacter(Grabbed)
+		if(IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name))then
+			swait(60)
+			local dialogue = IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name)
+			chatfunc(dialogue[M.RNG(1,#dialogue)])
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			local h = Grabbed:FindFirstChildOfClass'Humanoid'
+			Grabbed = nil
+			h.WalkSpeed = 16
+			h.JumpPower = 50
+			h.AutoRotate = true
+			h.AutoJumpEnabled = true
+			h.PlatformStand = false
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabbed)
+				end
+			end
+		else
+			local s = Sound(RArm,260430060,1,1,false,false,false)
+			s:Play()
+			s.Ended:connect(function() s:Destroy() end)
+			for i = 0, .9, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(-0.054316666, 0.00629384024, -0.00943023153, 0.986508608, 0.0010291409, 0.163703948, 0, 0.99998033, -0.00628647255, -0.163707182, 0.00620165979, 0.986489117),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496530116, -0.990822315, 0.021535337, 0.927745104, 0, 0.373214513, -0.00234620273, 0.99998033, 0.00583224464, -0.373207152, -0.00628647255, 0.927726746),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498488486, -0.990985274, 0.0154777654, 0.999878109, 0, 0.0156117529, -9.81427147e-05, 0.99998033, 0.006285707, -0.0156114399, -0.00628647255, 0.999858379),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.17549443, 0.777586043, -0.934427261, 0.390449464, 0.898339152, -0.201335698, 0.0301172175, -0.23104164, -0.972477674, -0.920131624, 0.373639643, -0.117265522),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(0.0528750941, 1.49906909, 0.00386402756, 0.986508608, 0.0094125513, -0.163436547, 0.00102878432, 0.997969687, 0.0636843145, 0.163704127, -0.0629932657, 0.984495819),Alpha)
+			end
+			local hed = Grabbed:FindFirstChild'Head'
+			local hum = Grabbed:FindFirstChildOfClass'Humanoid'
+			for i = 1, M.RNG(15,35) do
+				if(hed)then
+					local spread = V3.N(M.RNG(-15,15)/100,M.RNG(-15,15)/100,M.RNG(-15,15)/100)
+					BloodDrop(hed.CFrame*CF.N(-hed.Size.X/2,0,0).p,hed.CFrame * CF.N(-hed.Size.X,0,0).p+spread,10)
+				end
+			end
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabbed)
+				end
+			end
+			Kill(Grabbed,true)
+			for i = 0, 1, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(0.0481926091, 0.00629382674, 0.0246174447, 0.65376097, 0.00475490233, 0.756685793, 0, 0.99998033, -0.00628372887, -0.756700635, 0.00410805643, 0.653748095),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496571243, -0.990822434, 0.0215304215, 0.927746773, 0, 0.373210311, -0.0023451522, 0.99998033, 0.00582970958, -0.37320295, -0.00628372887, 0.927728534),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498465598, -0.990985274, 0.0154769812, 0.999878168, 0, 0.0156086087, -9.80801415e-05, 0.99998033, 0.00628296379, -0.0156082809, -0.00628372887, 0.999858499),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.58050811, 0.449335635, -0.0116027892, 0.0270063579, 0.342460334, -0.939144135, 0.789849699, 0.568528593, 0.230028018, 0.612705827, -0.74799484, -0.255138427),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.36615491, 0.532160282, 0.409220845, 0.792185426, -0.607154131, 0.0616948716, 0.0765790567, -0.00139807793, -0.997062683, 0.605456948, 0.794582963, 0.0453877486),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(0.0528553352, 1.49906898, 0.00389073044, 0.986508369, 0.00941299647, -0.163440406, 0.00102871726, 0.997969687, 0.0636851341, 0.163708001, -0.062994048, 0.98449564),Alpha)
+			end
+			GetTorso(Grabbed).Velocity = Root.CFrame.lookVector*25 + V3.N(0,25,0)
+		end
+		Grabbed = nil
+		Hum.JumpPower = 75
+		GrabRoot = nil
+		GrabWeld = nil
+		Attack = false
+		NeutralAnims = true
+	end
+end
+
+function Snap()
+	if(Grabbed)then
+		NeutralAnims = false
+		Attack = true
+
+		GrabWeld.C0 = CF.N(0,0,1.25)
+		
+		for i = 0, 3, 0.1 do
+			swait()
+			local Alpha = .15
+			RJ.C0 = clerp(RJ.C0,CFrame.new(3.20601184e-13, 0.00629484281, 1.42357749e-06, 0.999999225, 5.09317033e-11, 0, -4.38656264e-11, 0.999980271, -0.00628618058, 0, 0.00628617639, 0.999979496),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496493757, -0.990822613, 0.0216114447, 0.999877751, -4.38656264e-11, 0.0156119959, -9.81397825e-05, 0.999980271, 0.0062854127, -0.0156116877, -0.00628618058, 0.999858022),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498533875, -0.990985215, 0.015461375, 0.999877751, -4.38656264e-11, 0.0156119959, -9.81397825e-05, 0.999980271, 0.0062854127, -0.0156116877, -0.00628618058, 0.999858022),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-1.0497061, 0.705051541, -0.33803454, 0.682119429, -0.717170596, 0.142754376, -0.0926411301, -0.278404415, -0.955985785, 0.725348234, 0.638871491, -0.256344557),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.52703452, 0.551944017, -0.166501373, 0.793947041, 0.602447271, -0.0818819627, 0.2267804, -0.418403924, -0.879493535, -0.564108193, 0.679702103, -0.468813747),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(0.228190616, 1.50039434, -0.0144923478, 0.887658954, 0.460500509, -8.55699182e-06, -0.459563375, 0.885853827, 0.0637544692, 0.0293665491, -0.0565883033, 0.997965276),Alpha)
+		end
+		local plr = game:service'Players':GetPlayerFromCharacter(Grabbed)
+		if(IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name))then
+			swait(60)
+			local dialogue = IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name)
+			chatfunc(dialogue[M.RNG(1,#dialogue)])
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			local h = Grabbed:FindFirstChildOfClass'Humanoid'
+			Grabbed = nil
+			h.WalkSpeed = 16
+			h.JumpPower = 50
+			h.AutoRotate = true
+			h.AutoJumpEnabled = true
+			h.PlatformStand = false
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabbed)
+				end
+			end
+		else
+			local s = Sound(Grabbed.Head,1093102664,1,1,false,false,false)
+			s:Play()
+			s.Ended:connect(function() s:Destroy() end)
+			
+			Grabbed.Parent = workspace
+			local h = Grabbed:FindFirstChildOfClass'Humanoid'
+			local t = GetTorso(Grabbed)
+			Kill(Grabbed,false,true)
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				local tor = GetTorso(Grabbed)
+				if(tor and tor:FindFirstChild'RootJoint')then
+					tor.RootJoint.Part0 = GrabRoot
+				end
+			end
+			GrabWeld:destroy()
+			for i = 0, 1.5, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(3.20601184e-13, 0.00629484281, 1.42357749e-06, 0.999999225, 5.09317033e-11, 0, -4.38656264e-11, 0.999980271, -0.00628618058, 0, 0.00628617639, 0.999979496),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496493757, -0.990822613, 0.0216114447, 0.999877751, -4.38656264e-11, 0.0156119959, -9.81397825e-05, 0.999980271, 0.0062854127, -0.0156116877, -0.00628618058, 0.999858022),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498533875, -0.990985215, 0.015461375, 0.999877751, -4.38656264e-11, 0.0156119959, -9.81397825e-05, 0.999980271, 0.0062854127, -0.0156116877, -0.00628618058, 0.999858022),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.33044577, 0.483468592, 0.00416206988, -0.0427992642, 0.98883146, 0.142758116, 0.252784908, 0.14895758, -0.955987155, -0.966575086, -0.00482845958, -0.256336927),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.43940496, 0.519364655, -0.0901164114, 0.0136005525, -0.996542454, -0.0819599032, -0.471335799, 0.0659001991, -0.879488349, 0.881848693, 0.0505921617, -0.468809843),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(0.228190616, 1.50039434, -0.0144923478, 0.887658954, 0.460500509, -8.55699182e-06, -0.459563375, 0.885853827, 0.0637544692, 0.0293665491, -0.0565883033, 0.997965276),Alpha)
+			end
+		end
+		Hum.JumpPower = 75
+		Grabbed = nil
+		GrabRoot = nil
+		GrabWeld = nil
+		Attack = false
+		NeutralAnims = true
+	end
+end
+
+function PunchIt()
+	if(Mouse.Target and Mouse.Target.Parent and Mouse.Target.Parent:FindFirstChildOfClass'Humanoid' and Mouse.Target.Parent:FindFirstChildOfClass'Humanoid'.Health > 0 and not Mouse.Target.Parent:FindFirstChild'AshesToAshes')then
+		Attack = true
+		NeutralAnims = false		
+		local lol = Mouse.Target.Parent
+		local h = lol:FindFirstChildOfClass'Humanoid'
+		local tor = GetTorso(lol)
+		if(tor)then
+			Torso.CFrame = tor.CFrame * CF.N(0,0,2)
+			tor.Anchored = true
+			Root.Anchored = true
+			h.AutoRotate = false
+			h.WalkSpeed = 0
+			h.JumpPower = 0
+			Hum.AutoRotate = false
+			Hum.WalkSpeed = 0
+			Hum.JumpPower = 0
+			for i = 0, 10, 0.1 do
+				swait()
+				local Alpha = .05
+				RJ.C0 = clerp(RJ.C0,CFrame.new(0.118668929, 0.00629467471, 0.0391367227, 0.858520091, -0.00322227809, -0.512769163, 0, 0.99998033, -0.00628394773, 0.512779295, 0.0053948951, 0.858503222),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.568280399, -0.989645958, 0.2085682, 0.850410283, 0, 0.526120186, -0.00330611179, 0.99998033, 0.00534393359, -0.526109815, -0.00628394773, 0.850393534),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.531064987, -1.01046956, 0.0309553742, 0.88661027, -0.178071246, -0.426864058, 0.199540049, 0.9798733, 0.00568569079, 0.4172602, -0.0902174562, 0.904298007),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.26354766, 0.594924927, 0.199008048, 0.902838469, 0.425261527, 0.0635258257, -0.41153428, 0.811815679, 0.414240181, 0.124589115, -0.400134921, 0.907948136),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.18380463, 0.614758193, 0.713801742, 0.931151271, -0.364624411, 0.002581954, 0.0649559572, 0.158903733, -0.985155106, 0.358801365, 0.917495966, 0.171647921),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(-0.124481052, 1.49912858, 0.0135570429, 0.85852021, -0.0294814389, 0.511930943, -0.00322263478, 0.998016059, 0.0628788844, -0.512768984, -0.0556325614, 0.856721878),Alpha)
+			end
+			local s = Sound(Torso,446961725,1,1,false,false,false)
+			s:Play()
+			s.Ended:connect(function() s:Destroy() end)
+			for i = 1, 4 do
+				Effect{
+					Effect='Resize+AndFade',
+					Color = BrickColor.new'Crimson',
+					Material = Enum.Material.Neon,
+					Size = V3.N(1,1,1),
+					Mesh = {MeshType=Enum.MeshType.Sphere},
+					CFrame=Head.CFrame*CF.N(0.2, 0.2, -0.49)*CF.A(0,0,M.R(i*90)),
+					FXSettings={
+						EndSize=V3.N(.05,5,.05),
+					}
+				}	
+				Effect{
+					Effect='Resize+AndFade',
+					Color = BrickColor.new'Crimson',
+					Material = Enum.Material.Neon,
+					Size = V3.N(1,1,1),
+					Mesh = {MeshType=Enum.MeshType.Sphere},
+					CFrame=Head.CFrame*CF.N(-0.2, 0.2, -0.49)*CF.A(0,0,M.R(i*90)),
+					FXSettings={
+						EndSize=V3.N(.05,5,.05),
+					}
+				}	
+			end
+			swait(60)
+			local plr = game:service'Players':GetPlayerFromCharacter(lol)
+			if(IsWhitelisted((plr and plr.UserId or 0),lol.Name))then
+				local dialogue = IsWhitelisted((plr and plr.UserId or 0),lol.Name)
+				chatfunc(dialogue[M.RNG(1,#dialogue)])
+				lol.Parent = workspace
+				local h = lol:FindFirstChildOfClass'Humanoid'
+				h.WalkSpeed = 16
+				h.JumpPower = 50
+				h.AutoRotate = true
+				h.AutoJumpEnabled = true
+				h.PlatformStand = false
+				tor.Anchored = false
+				if(GrabRoot)then
+					GrabRoot.Parent = lol
+					if(GrabRoot:FindFirstChild'RootJoint')then
+						GrabRoot.RootJoint.Part0 = GrabRoot
+						GrabRoot.RootJoint.Part1 = GetTorso(lol)
+					end
+				end
+			else
+				local s = Sound(Torso,429400881,1,1,false,false,false)
+				s:Play()
+	
+				s.Ended:connect(function() s:Destroy() end)
+				if(Plr.UserId == 5719877 and Illusion)then
+					Disguise(tor.Parent)
+				else
+					tor:destroy()
+				end
+				Blood(tor,450)
+				
+				for i = 0, .4, 0.1 do
+					swait()
+					local Alpha = .5
+					RJ.C0 = clerp(RJ.C0,CFrame.new(-0.00849027745, 0.00629195292, 0.00207519461, 0, 0.00628576428, 0.999979854, 0, 0.99998033, -0.00628576661, -0.999999702, -7.27595761e-12, 0),Alpha)
+					LH.C0 = clerp(LH.C0,CFrame.new(-0.504917622, -1.05488086, 0.066530779, 0.849894702, 0.338942498, 0.403481334, -0.356205165, 0.933785081, -0.0341095924, -0.388325959, -0.114732549, 0.914351881),Alpha)
+					RH.C0 = clerp(RH.C0,CFrame.new(0.498520464, -0.990982294, 0.0154670384, 0.309365898, 0, -0.950943351, 0.0059774071, 0.99998033, 0.00194460154, 0.950924397, -0.00628576661, 0.309359759),Alpha)
+					LS.C0 = clerp(LS.C0,CFrame.new(-1.31284428, 0.468923599, -0.00576730724, 0.923811853, 0.382528603, 0.0156120034, -0.382658333, 0.923868656, 0.00628500059, -0.0120192459, -0.0117802192, 0.999858379),Alpha)
+					RS.C0 = clerp(RS.C0,CFrame.new(1.49771297, 0.500330687, 0.0072571151, 0, -0.999878228, 0.0156120034, 0.99998033, 9.81333942e-05, 0.00628500059, -0.00628576661, 0.0156116933, 0.999858379),Alpha)
+					NK.C0 = clerp(NK.C0,CFrame.new(0.00705647469, 1.49904037, -0.000922955165, -1.82539225e-07, 0.0574940294, -0.998345554, 0.00628540665, 0.998326242, 0.0574929155, 0.999979854, -0.00627500098, -0.000361557119),Alpha)
+				end
+				swait(60)
+			end
+			Root.Anchored = false
+			Hum.AutoRotate = true
+			Hum.WalkSpeed = 8
+			Hum.JumpPower = 75
+			Attack = false
+			NeutralAnims = true
+		end
+	end
+end
+
+function SlitThroat()
+	if(Grabbed)then
+		local Grabd = Grabbed
+		Attack = true
+		NeutralAnims = false
+		for i = 0, 2, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(1.23665141e-12, 0.00629508123, 1.42510908e-06, 0.999984562, 1.96450856e-10, 0, 1.02241826e-10, 0.999980271, -0.0062861722, 9.31322575e-10, 0.00628609909, 0.999965906),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496471316, -0.990824282, 0.0216033701, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498526543, -0.990986764, 0.0154612511, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.21775055, 0.450534195, 0.383982718, 0.674927175, 0.574800849, -0.462668359, -0.336127609, 0.797698259, 0.500695467, 0.656870246, -0.182417512, 0.73159492),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(8.16631564e-06, 1.49894774, -0.0143926218, 0.999984562, 3.67581379e-07, -1.62050128e-07, -3.56332748e-07, 0.997964919, 0.0637686178, 1.8440187e-07, -0.0637678728, 0.997950256),Alpha)
+		end
+		--Part(parent,color,material,size,cframe,anchored,cancollide)
+		local knife = Part(Char,BrickColor.new"Medium stone grey",Enum.Material.SmoothPlastic,V3.N(.2,.4,2),CF.N(),false,false)
+		knife.Anchored = false
+		local knifeMesh = Mesh(knife,Enum.MeshType.FileMesh,"rbxassetid://202083123","rbxassetid://210526258",V3.N(1,1,1),V3.N())
+		local knifeWeld = NewInstance("Weld",knife,{
+			Part0 = knife,
+			Part1 = RArm,
+			C0 = CF.N(0,1,.5)
+		})
+		for i = 0, 3, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(1.23665141e-12, 0.00629508123, 1.42510908e-06, 0.999984562, 1.96450856e-10, 0, 1.02241826e-10, 0.999980271, -0.0062861722, 9.31322575e-10, 0.00628609909, 0.999965906),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496471316, -0.990824282, 0.0216033701, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498526543, -0.990986764, 0.0154612511, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(0.991692483, 0.4137474, -0.579402447, 0.0676753521, 0.0960910618, 0.993061543, 0.95268631, -0.301849544, -0.0357161537, 0.29632321, 0.948493719, -0.111972481),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(8.16631564e-06, 1.49894774, -0.0143926218, 0.999984562, 3.67581379e-07, -1.62050128e-07, -3.56332748e-07, 0.997964919, 0.0637686178, 1.8440187e-07, -0.0637678728, 0.997950256),Alpha)
+		end
+		local plr = game:service'Players':GetPlayerFromCharacter(Grabbed)
+		if(IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name))then
+			swait(60)
+			local dialogue = IsWhitelisted((plr and plr.UserId or 0),Grabbed.Name)
+			chatfunc(dialogue[M.RNG(1,#dialogue)])
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			local h = Grabbed:FindFirstChildOfClass'Humanoid'
+			Grabbed = nil
+			h.WalkSpeed = 16
+			h.JumpPower = 50
+			h.AutoRotate = true
+			h.AutoJumpEnabled = true
+			h.PlatformStand = false
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabd)
+				end
+			end
+		else
+		--	
+			for i = 0, 1, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(1.23665141e-12, 0.00629508123, 1.42510908e-06, 0.999984562, 1.96450856e-10, 0, 1.02241826e-10, 0.999980271, -0.0062861722, 9.31322575e-10, 0.00628609909, 0.999965906),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496471316, -0.990824282, 0.0216033701, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498526543, -0.990986764, 0.0154612511, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.24395478, 0.368206263, -0.490601838, 0.0676723644, 0.449762672, 0.890572071, 0.952686548, -0.29424572, 0.0762096569, 0.296323329, 0.843279243, -0.448395431),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(8.16631564e-06, 1.49894774, -0.0143926218, 0.999984562, 3.67581379e-07, -1.62050128e-07, -3.56332748e-07, 0.997964919, 0.0637686178, 1.8440187e-07, -0.0637678728, 0.997950256),Alpha)
+			end
+			local s = Sound(Grabbed.Head,1093102664,1,1,false,false,false)
+			s:Play()
+			s.Ended:connect(function() s:Destroy() end)
+			Grabbed.Parent = workspace
+			GrabWeld:destroy()
+			Kill(Grabbed,false,false,true)
+			if(GrabRoot)then
+				GrabRoot.Parent = Grabbed
+				if(GrabRoot:FindFirstChild'RootJoint')then
+					GrabRoot.RootJoint.Part0 = GrabRoot
+					GrabRoot.RootJoint.Part1 = GetTorso(Grabd)
+				end
+			end
+			if(not Illusion)then
+				coroutine.wrap(function()
+					repeat swait()
+						if(GetTorso(Grabd))then
+							BloodDrop(GetTorso(Grabd).CFrame*CF.N(0,(GetTorso(Grabd).Size.Y+.5)/2,0).p,GetTorso(Grabd).CFrame * CF.N(0,0,-GetTorso(Grabd).Size.Z).p,15)
+						end
+					until not Grabd.Parent
+				end)()
+			end
+			for i = 0, 2, 0.1 do
+				swait()
+				local Alpha = .3
+				RJ.C0 = clerp(RJ.C0,CFrame.new(1.23665141e-12, 0.00629508123, 1.42510908e-06, 0.999984562, 1.96450856e-10, 0, 1.02241826e-10, 0.999980271, -0.0062861722, 9.31322575e-10, 0.00628609909, 0.999965906),Alpha)
+				LH.C0 = clerp(LH.C0,CFrame.new(-0.496471316, -0.990824282, 0.0216033701, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+				RH.C0 = clerp(RH.C0,CFrame.new(0.498526543, -0.990986764, 0.0154612511, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+				RS.C0 = clerp(RS.C0,CFrame.new(1.25576186, 0.533815503, -0.050903488, 0.0676771998, -0.993729889, -0.0889119133, 0.95268935, 0.0908342898, -0.290055543, 0.296313196, -0.0650753155, 0.952863812),Alpha)
+				NK.C0 = clerp(NK.C0,CFrame.new(8.16631564e-06, 1.49894774, -0.0143926218, 0.999984562, 3.67581379e-07, -1.62050128e-07, -3.56332748e-07, 0.997964919, 0.0637686178, 1.8440187e-07, -0.0637678728, 0.997950256),Alpha)
+			end
+		end
+		for i = 0, 2, 0.1 do
+			swait()
+			local Alpha = .3
+			RJ.C0 = clerp(RJ.C0,CFrame.new(1.23665141e-12, 0.00629508123, 1.42510908e-06, 0.999984562, 1.96450856e-10, 0, 1.02241826e-10, 0.999980271, -0.0062861722, 9.31322575e-10, 0.00628609909, 0.999965906),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496471316, -0.990824282, 0.0216033701, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498526543, -0.990986764, 0.0154612511, 0.999863088, 1.02241826e-10, 0.0156117678, -9.81384219e-05, 0.999980271, 0.0062853354, -0.0156114744, -0.0062861722, 0.999844432),Alpha)
+			LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.21775055, 0.450534195, 0.383982718, 0.674927175, 0.574800849, -0.462668359, -0.336127609, 0.797698259, 0.500695467, 0.656870246, -0.182417512, 0.73159492),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(8.16631564e-06, 1.49894774, -0.0143926218, 0.999984562, 3.67581379e-07, -1.62050128e-07, -3.56332748e-07, 0.997964919, 0.0637686178, 1.8440187e-07, -0.0637678728, 0.997950256),Alpha)
+		end
+		knife:destroy()
+		GrabWeld = nil
+		Grabbed = nil
+		GrabRoot = nil
+		Hum.JumpPower = 75
+		Attack = false
+		NeutralAnims = true
+	end
+end
+
+
+Mouse.KeyDown:connect(function(k)
+	if(Attack)then return end
+	if(k == ';')then Illusion = not Illusion end
+	if(k == 'k')then NKWhitelist = not NKWhitelist end
+	if(not HoldingHead)then
+		if(Grabbed)then
+			if(k == 'q')then Puncc() end
+			if(k == 'e')then Knockout() end
+			if(k == 'r')then Snap() end
+			if(k == 't')then SlitThroat() end
+		else
+			if(k == 'q')then Grab() end
+			if(k == 'e')then PunchIt() end
+		end
+	end
+end)
+--// Wrap it all up \\--
+
+S.RunService.RenderStepped:connect(function()
+	if(Grabbed)then
+		local hum = Grabbed:FindFirstChildOfClass'Humanoid'
+		if(typeof(Grabbed) == 'Instance' and GetTorso(Grabbed) and hum and Grabbed.Parent)then
+			hum.PlatformStand = true
+			--GetTorso(Grabbed).CFrame = Torso.CFrame * CF.N(-.4,-.15,-1.25)
+			GetTorso(Grabbed).Velocity = V3.N()
+			hum.WalkSpeed = 0
+			hum.AutoRotate = false
+			hum.AutoJumpEnabled = false
+			Hum.JumpPower = 0
+		else
+			if(not Attack)then Hum.JumpPower = 75 end
+			Grabbed = nil
+		end
+	end
+end)
+coroutine.wrap(function()
+	while true do
+		swait()
+		for puddle,data in next, BloodPuddles do
+			if(puddle.Transparency > 0.9)then
+				BloodPuddles[puddle] = nil
+				puddle:destroy()
+			end
+			data.Frame = data.Frame + 1
+			if(data.Frame > Frame_Speed*4)then
+				local trans = (data.Frame-Frame_Speed*4)/Frame_Speed*2
+				puddle.Transparency = trans
+				if(puddle:FindFirstChild'CylinderMesh' and puddle.CylinderMesh.Scale.Z > 0)then
+					puddle.CylinderMesh.Scale = puddle.CylinderMesh.Scale-V3.N(.1,0,.1)
+				end
+			else
+				puddle.Transparency = 0
+			end
+		end
+	end
+end)()
+
+while true do
+	swait()
+	Music.Parent = Char
+	Music.Playing = true
+	Music.Volume = 2
+	Sine = Sine + Change
+	local hitfloor,posfloor = workspace:FindPartOnRay(Ray.new(Root.CFrame.p,((CFrame.new(Root.Position,Root.Position - Vector3.new(0,1,0))).lookVector).unit * 4), Char)
+	local State = (not hitfloor and Root.Velocity.y < -1 and "Fall" or not hitfloor and Root.Velocity.y > 1 and "Jump" or hitfloor and (math.abs(Root.Velocity.x) > 1 or math.abs(Root.Velocity.z) > 1) and "Walk" or hitfloor and "Idle")
+	local wsVal = 5 / (Hum.WalkSpeed/16)
+	if(State == 'Walk')then
+		Change = .5
+		RH.C1 = clerp(RH.C1,CF.N(0,1,-.15*M.C(Sine/wsVal))*CF.A(M.R(0+25*M.C(Sine/wsVal)),0,0),.2*(Hum.WalkSpeed/16))
+		LH.C1 = clerp(LH.C1,CF.N(0,1,.15*M.C(Sine/wsVal))*CF.A(M.R(0+25*-M.C(Sine/wsVal)),0,0),.2*(Hum.WalkSpeed/16))
+	else
+		RH.C1 = clerp(RH.C1,CF.N(0,1,0),.1)
+		LH.C1 = clerp(LH.C1,CF.N(0,1,0),.1)
+	end
+	if(HoldingHead and time()-HeadDrip > .15)then
+		HeadDrip = time()
+		BloodDrop(HoldingHead.CFrame*CF.N(0,-HoldingHead.Size.Y/2,0).p,HoldingHead.CFrame * CF.N(0,-HoldingHead.Size.Y,0).p,15)
+	end
+	if(NeutralAnims)then	
+		if(State == 'Idle')then
+			local Alpha = .1
+			RJ.C0 = clerp(RJ.C0,CFrame.new(3.20443325e-13, 0.00629174337, 1.40409247e-06, 0.999999225, 5.09317033e-11, 0, -4.38656264e-11, 0.999980271, -0.00628618058, 0, 0.00628617639, 0.999979496)*CF.N(0,M.R(0+5*M.C(time()*3)),0),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496498764, -0.990817845, 0.0216183439, 0.947845697, -4.38656264e-11, 0.318728328, -0.00200358406, 0.999980271, 0.00595832989, -0.318722039, -0.00628618058, 0.947826982)*CF.N(0,-M.R(0+5*M.C(time()*3)),0)*CF.A(0,M.R(0+5*M.C(time()*3)),0),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498531371, -0.990982354, 0.0154620642, 0.941729724, -4.38656264e-11, -0.336369544, 0.00211448013, 0.999980271, 0.00591988349, 0.336362928, -0.00628618058, 0.941711128)*CF.N(0,-M.R(0+5*M.C(time()*3)),0)*CF.A(0,-M.R(0+5*M.C(time()*3)),0),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.08476901, 0.257644087, 0.228787184, 0.883603036, 0.468041569, 0.0134928999, -0.4091084, 0.757686257, 0.508470178, 0.227761805, -0.454805851, 0.860973656)*CF.N(0,M.R(0+5*M.C(time()*3)),0),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(7.57486032e-06, 1.4989568, -0.0143897533, 0.999999642, -2.39652582e-06, 1.0734424e-05, -6.90852175e-08, 0.974582672, 0.224028483, -1.09979883e-05, -0.224028409, 0.974582314)*CF.A(M.R(0+5*M.C(time()*3)),0,0),Alpha)
+			if(Grabbed)then
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			else
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.05502665, 0.277505487, 0.219680771, 0.876135767, -0.481874973, 0.0134906508, 0.408931583, 0.757748127, 0.508520186, -0.255265683, -0.440016001, 0.860944033)*CF.N(0,M.R(0+5*M.C(time()*3)),0),Alpha)
+
+			end
+		elseif(State == 'Walk')then
+			local Alpha = .2*(Hum.WalkSpeed/16)
+			RJ.C0 = clerp(RJ.C0, RJC0*CF.N(0,M.R(0+10*-M.C(Sine/(wsVal/2))),0)*CF.A(0,M.R(0+5*-M.C(Sine/wsVal)),0),Alpha)
+			RH.C0 = clerp(RH.C0, RHC0*CF.N(0,-M.R(0+10*-M.C(Sine/(wsVal/2))),0),Alpha)
+			LH.C0 = clerp(LH.C0, LHC0*CF.N(0,-M.R(0+10*-M.C(Sine/(wsVal/2))),0),Alpha)
+			RS.C0 = clerp(RS.C0, RSC0*CF.A(M.R(0+35*M.C(Sine/wsVal)),0,0),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(7.57486032e-06, 1.4989568, -0.0143897533, 0.999999642, -2.39652582e-06, 1.0734424e-05, -6.90852175e-08, 0.974582672, 0.224028483, -1.09979883e-05, -0.224028409, 0.974582314),Alpha)
+			if(Grabbed)then
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			else
+				LS.C0 = clerp(LS.C0, LSC0*CF.A(M.R(0+35*-M.C(Sine/wsVal)),0,0),Alpha)
+			end
+		elseif(State == 'Jump')then
+			local Alpha = .1
+			RJ.C0 = clerp(RJ.C0,CFrame.new(0.00495760236, -0.116021112, 0.317090333, 0.999962687, 0.00825679209, -0.0024241209, -0.00827200152, 0.844665885, -0.535230041, -0.00237171073, 0.535230041, 0.844702601),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.496496111, -0.990818977, 0.0216087326, 0.999878228, 2.07033008e-06, 0.0156116523, -0.000100227568, 0.99998033, 0.0062866807, -0.0156113291, -0.00628748536, 0.999858379),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.491738498, -1.08575797, -0.419044733, 0.999878228, -0.0125858337, 0.00923690852, -0.000100227568, 0.586480319, 0.809963584, -0.0156113291, -0.809865713, 0.586407542),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.49824142, 0.53253746, 0.0408395231, 0.999878228, -0.0131711056, 0.00838126708, -0.000100227568, 0.531432867, 0.847100377, -0.0156113291, -0.846997976, 0.531366825),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(9.76253432e-06, 1.49894738, -0.0143944025, 1.00000012, 8.20029527e-07, 1.90846622e-05, 3.48691538e-06, 0.97446239, -0.224550784, -1.8781051e-05, 0.224550694, 0.974462509),Alpha)
+			if(Grabbed)then
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			else
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.24553442, 0.294952244, 0.384812891, 0.889459968, -0.456830114, 0.0129454378, 0.370550126, 0.737471342, 0.564649284, -0.267495662, -0.497435898, 0.825229526),Alpha)
+			end
+		elseif(State == 'Fall')then
+			local Alpha = .1
+			RJ.C0 = clerp(RJ.C0,CFrame.new(0.00842534378, -0.109833695, 0.539619565, 0.999999285, -0.000891914242, -2.43615359e-05, 0.000892000098, 0.998707473, 0.0508202985, -2.09975988e-05, -0.0508202836, 0.998707473),Alpha)
+			LH.C0 = clerp(LH.C0,CFrame.new(-0.502819896, -0.764119625, -0.38484329, 0.999878109, -0.00643025152, 0.0142311938, -9.83992431e-05, 0.908680081, 0.417493343, -0.0156161878, -0.417443812, 0.908568621),Alpha)
+			RH.C0 = clerp(RH.C0,CFrame.new(0.498698592, -1.07259846, 0.0265202522, 0.999878109, 0.00513634644, 0.0147476438, -9.83992431e-05, 0.946416557, -0.322948933, -0.0156161878, 0.322908074, 0.946301579),Alpha)
+			RS.C0 = clerp(RS.C0,CFrame.new(1.49937201, 0.402762115, 0.114091098, 0.999878109, -0.0059155277, 0.0144527331, -9.83992431e-05, 0.923073709, 0.38462311, -0.0156161878, -0.384577632, 0.92296052),Alpha)
+			NK.C0 = clerp(NK.C0,CFrame.new(1.61054268e-05, 1.53313649, -0.210731715, 1.00000012, -1.17323361e-05, -7.96755776e-05, 3.43421634e-05, 0.956994712, 0.290106058, 7.28452578e-05, -0.290106088, 0.956994593),Alpha)
+			if(Grabbed)then
+				LS.C0 = clerp(LS.C0,CFrame.new(-0.981049836, 0.491094977, -1.00935578, -0.13693732, -0.854116678, -0.501730025, -0.990544498, 0.122350313, 0.0620673522, 0.00837406516, 0.505485117, -0.862794578),Alpha)
+			else
+				LS.C0 = clerp(LS.C0,CFrame.new(-1.51134682, 0.477918893, 0.26379019, 0.960274398, 0.278757304, 0.0129483193, -0.237100914, 0.790547311, 0.564639926, 0.147161216, -0.545279264, 0.825235784),Alpha)
+			end
+		end
+	end
+end
+
