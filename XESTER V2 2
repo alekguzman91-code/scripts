@@ -1,0 +1,321 @@
+local skull = script.skully
+local rdx = {"Really black","Really red"}
+local Torso = skull
+local Character = Torso
+local mainp = skull.mainp
+local spkball = script.Effects.spikeball
+local shckwav = script.Effects.shockwave
+local wosh = script.Effects.woosh
+local looking = false
+RunSrv = game:GetService("RunService")
+RenderStepped = game:GetService("RunService").RenderStepped
+removeuseless = game:GetService("Debris")
+smoothen = game:GetService("TweenService")
+cam = workspace.CurrentCamera
+lig = game:GetService("Lighting")
+local die = script.die
+local bem = script.bem:Clone()
+script.bem:Destroy()
+
+
+local function weldBetween(a, b)
+    local weld = Instance.new("ManualWeld", a)
+    weld.Part0 = a
+    weld.Part1 = b
+    weld.C0 = a.CFrame:inverse() * b.CFrame
+    return weld
+end
+
+function bolt(parent,from,too,endtarget,color,size,mat,offset)
+local function iray(pos, di, ran, ignore)
+local ing={endtarget}
+	return workspace:FindPartOnRayWithWhitelist(Ray.new(pos, di.unit * ran),ing)
+end
+local function iray2(StartPos, EndPos, Distance, Ignore)
+local di = CFrame.new(StartPos,EndPos).lookVector
+return iray(StartPos, di, Distance, Ignore)
+end
+lastposition = from
+local step = 16
+local distance = (from-too).magnitude
+for i = 1,distance, step do
+local from = lastposition
+local too = from + -(from-too).unit*step+ Vector3.new(math.random(-offset,offset),math.random(-offset,offset),math.random(-offset,offset))
+local bolt = Instance.new("Part",parent)
+bolt.Size = Vector3.new(size,size,(from-too).magnitude)
+bolt.Anchored = true
+bolt.CanCollide = false
+bolt.Name = "supeffect"
+bolt.BrickColor = color
+bolt.Material = mat
+bolt.CFrame = CFrame.new(from:lerp(too,.5),too)
+lastposition = too
+coroutine.wrap(function()
+for i = 1, 5 do
+bolt.Transparency = bolt.Transparency + .2
+wait()
+end
+bolt:Destroy()
+end)()
+end
+local lastbolt = Instance.new("Part",parent)
+lastbolt.Size = Vector3.new(1,1,(from-too).magnitude)
+lastbolt.Anchored = true
+lastbolt.CanCollide = false
+lastbolt.BrickColor = color
+lastbolt.Name = "supeffect"
+lastbolt.Material = mat
+lastbolt.CFrame = CFrame.new(lastposition,too)
+lastbolt.Size = Vector3.new(size,size,size)
+local start = lastposition
+local hit,endp = iray2(lastposition,too,650,lastbolt)
+local dis = (start - endp).magnitude
+lastbolt.CFrame = CFrame.new(lastposition,too) * CFrame.new(0,0,-dis/2)
+if dis < 20 then
+lastbolt.Size = Vector3.new(size,size,dis)
+else
+lastbolt.Size = Vector3.new(size,size,20)
+end
+coroutine.wrap(function()
+for i = 1, 5 do
+lastbolt.Transparency = lastbolt.Transparency + .2
+wait()
+end
+lastbolt:Destroy()
+end)()
+end
+function littlebolt(parent,from,too,endtarget,color,size,mat,offset)
+local function iray(pos, di, ran, ignore)
+local ing={endtarget}
+	return workspace:FindPartOnRayWithWhitelist(Ray.new(pos, di.unit * ran),ing)
+end
+local function iray2(StartPos, EndPos, Distance, Ignore)
+local di = CFrame.new(StartPos,EndPos).lookVector
+return iray(StartPos, di, Distance, Ignore)
+end
+lastposition = from
+local step = 1
+local distance = (from-too).magnitude
+for i = 1,distance, step do
+local from = lastposition
+local too = from + -(from-too).unit*step+ Vector3.new(math.random(-offset,offset),math.random(-offset,offset),math.random(-offset,offset))
+local bolt = Instance.new("Part",parent)
+bolt.Size = Vector3.new(size,size,(from-too).magnitude)
+bolt.Anchored = true
+bolt.CanCollide = false
+bolt.Name = "supeffect"
+bolt.BrickColor = color
+bolt.Material = mat
+bolt.CFrame = CFrame.new(from:lerp(too,.5),too)
+lastposition = too
+coroutine.wrap(function()
+for i = 1, 5 do
+bolt.Transparency = bolt.Transparency + .2
+wait()
+end
+bolt:Destroy()
+end)()
+end
+local lastbolt = Instance.new("Part",parent)
+lastbolt.Size = Vector3.new(1,1,(from-too).magnitude)
+lastbolt.Anchored = true
+lastbolt.CanCollide = false
+lastbolt.BrickColor = color
+lastbolt.Name = "supeffect"
+lastbolt.Material = mat
+lastbolt.CFrame = CFrame.new(lastposition,too)
+lastbolt.Size = Vector3.new(size,size,size)
+local start = lastposition
+local hit,endp = iray2(lastposition,too,650,lastbolt)
+local dis = (start - endp).magnitude
+lastbolt.CFrame = CFrame.new(lastposition,too) * CFrame.new(0,0,-dis/2)
+if dis < 20 then
+lastbolt.Size = Vector3.new(size,size,dis)
+else
+lastbolt.Size = Vector3.new(size,size,20)
+end
+coroutine.wrap(function()
+for i = 1, 5 do
+lastbolt.Transparency = lastbolt.Transparency + .2
+wait()
+end
+lastbolt:Destroy()
+end)()
+end
+
+function damagealll(Radius,Position)		
+	local Returning = {}		
+	for _,v in pairs(workspace:GetChildren()) do		
+		if v~=Character and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChild('Torso') or v:FindFirstChild('UpperTorso') then
+if v:FindFirstChild("Torso") then		
+			local Mag = (v.Torso.Position - Position).magnitude		
+			if Mag < Radius then		
+				table.insert(Returning,v)		
+			end
+elseif v:FindFirstChild("UpperTorso") then	
+			local Mag = (v.UpperTorso.Position - Position).magnitude		
+			if Mag < Radius then		
+				table.insert(Returning,v)		
+			end
+end	
+		end		
+	end		
+	return Returning		
+end
+
+function swait(num)
+	if num == 0 or num == nil then
+		game:service("RunService").Stepped:wait(0)
+	else
+		for i = 0, num do
+			game:service("RunService").Stepped:wait(0)
+		end
+	end
+end
+
+function SOUND(PARENT,ID,VOL,LOOP,PITCH,REMOVE)
+local so = Instance.new("Sound")
+so.Parent = PARENT
+so.SoundId = "rbxassetid://"..ID
+so.Volume = VOL
+so.Looped = LOOP
+so.Pitch = PITCH
+so:Play()
+removeuseless:AddItem(so,REMOVE)
+end
+
+function shockwave(position,scale,transparency,brickcolor,speed,transparencyincrease,mat)
+coroutine.wrap(function()
+local shockwave = shckwav:Clone() shockwave.Parent = Torso
+shockwave.Size = Vector3.new(1,1,1)
+shockwave.CanCollide = false
+shockwave.Anchored = true
+shockwave.Transparency = transparency
+shockwave.BrickColor = brickcolor
+shockwave.Material = mat
+shockwave.CFrame = position * CFrame.new(0,scale.Y*1.25,0)
+local shockwave2 = shckwav:Clone() shockwave2.Parent = Torso
+shockwave2.Size = Vector3.new(1,1,1)
+shockwave2.CanCollide = false
+shockwave2.Anchored = true
+shockwave2.Transparency = shockwave.Transparency
+shockwave2.BrickColor = shockwave.BrickColor
+shockwave2.CFrame = shockwave.CFrame
+shockwave2.Material = mat
+while shockwave.Transparency < 1 do
+shockwave.CFrame = shockwave.CFrame * CFrame.Angles(math.rad(0),math.rad(0+speed),0)
+shockwave2.CFrame = shockwave2.CFrame * CFrame.Angles(math.rad(0),math.rad(0-speed),0)
+shockwave.Transparency = shockwave.Transparency + transparencyincrease
+shockwave2.Transparency = shockwave2.Transparency + transparencyincrease
+shockwave2.Size = shockwave2.Size + scale
+shockwave.Size = shockwave.Size + scale
+swait()
+end
+shockwave:Destroy()
+shockwave2:Destroy()
+end)()
+end
+local didhit = false
+local mate = nil
+local colo = nil
+local ray = Ray.new(mainp.Position,Vector3.new(0,-25,0))
+local tabd = {bloodfolder,Character}
+local part, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, {bloodfolder,Root,Character,blooddecal,blowd,Torso},false,true)
+if part then
+	didhit = true
+mate = part.Material
+colo = part.BrickColor
+else
+	didhit = false
+end
+if didhit then
+	locpart = Instance.new("Part",Torso)
+	locpart.Anchored = true
+	locpart.Size = Vector3.new(1,1,1)
+	locpart.Transparency = 1
+	locpart.CFrame = CFrame.new(hitPosition)
+	locpart.CanCollide = false
+	mainp.CFrame = locpart.CFrame * CFrame.new(0,11,0)
+end
+local sine = 0
+local c = 1
+mainp.CFrame = locpart.CFrame * CFrame.new(0,1,0)*CFrame.Angles(math.rad(math.random(-1,1)),math.rad(-0),math.rad(20))
+local xz = bem:Clone() xz.Parent = Torso xz.CFrame = locpart.CFrame * CFrame.Angles(0,0,math.rad(90)) xz.Transparency = 0
+shockwave(CFrame.new(locpart.Position),Vector3.new(2,.2,2)*2,.5,BrickColor.new("White"),math.random(12,18),.05,"Neon")
+shockwave(CFrame.new(locpart.Position),Vector3.new(4,.35,4)*2,.5,BrickColor.new("White"),math.random(14,18),.05,"Neon")
+shockwave(CFrame.new(locpart.Position),Vector3.new(1.5,2,1.5)*2,.5,BrickColor.new("White"),math.random(5,11),.05,"Neon")
+local s = Instance.new("Sound",mainp)
+s.SoundId = "rbxassetid://4653717971"
+s.Volume = 8
+s:Play()
+s.Pitch = math.random(9,11)/10
+local doomtheme = Instance.new("Sound",mainp)
+doomtheme.SoundId = "rbxassetid://163290911"
+doomtheme.Name = "spf"
+doomtheme.Looped = true
+doomtheme.Volume = 1.5
+doomtheme:Play()
+
+Torso.ChildRemoved:connect(function(removed)
+if removed.Name == "doomtheme" then
+local doomtheme = Instance.new("Sound",mainp)
+doomtheme.SoundId = "rbxassetid://163290911"
+doomtheme.Name = "spf"
+doomtheme.Looped = true
+doomtheme.Volume = 1.5
+doomtheme:Play()
+end
+end)
+for i = 1, 20 do
+	xz.Transparency = xz.Transparency + .05
+	swait()
+end
+xz:Destroy()
+wait(2)
+	coroutine.wrap(function()
+		while wait(.25) do
+			shockwave(CFrame.new(locpart.Position),Vector3.new(1.5,.2,1.5),.5,BrickColor.new("White"),math.random(5,16),.025,"Neon")
+		end
+	end)()
+while true do
+	local t = wosh:Clone() t.Parent = Torso
+	t.CFrame = locpart.CFrame * CFrame.Angles(0,math.rad(math.random(-180,180)),0)
+	t.Anchored = false
+	t.CanCollide = false
+	t.Transparency = .75
+	coroutine.wrap(function()
+		local mthrandom = math.random(-5,5)
+		local xci = .8
+		for i = 1, 40 do
+			t.Size = t.Size + Vector3.new(1,.25,1)*1.1
+			t.Transparency = t.Transparency + .0125
+			t.CFrame = t.CFrame * CFrame.new(0,xci,0) * CFrame.Angles(0,math.rad(0+mthrandom),0)
+			swait()
+		end
+		t:Destroy()
+	end)()
+	c = 1
+	sine = sine + c
+	if not looking then
+	mainp.CFrame = mainp.CFrame:lerp(locpart.CFrame*CFrame.new(.45*math.sin(sine/36),15+1.25*math.sin(sine/48),.45*math.sin(sine/44))*CFrame.Angles(math.rad(5*math.sin(sine/39)),math.rad(5*math.sin(sine/36)),math.rad(5*math.sin(sine/47))),.05)
+end
+local Hit = damagealll(40,mainp.Position)
+for _,v in pairs(Hit) do
+if v:FindFirstChildOfClass("Humanoid") and v:FindFirstChildOfClass("Humanoid").Health > 0 and v:FindFirstChildOfClass("Humanoid").Name ~= "noneofurbusiness" then
+local slachtoffer = v:FindFirstChildOfClass("Humanoid")
+looking = true
+slachtoffer.WalkSpeed = 3
+		for i,v in pairs(game:GetService("Players"):GetChildren()) do
+			if v.Character == slachtoffer.Parent and v.PlayerGui:FindFirstChild"die" == nil then
+				local cd = die:Clone() cd.Enabled = true cd.Parent = v.PlayerGui cd.LocalScript.Disabled = false
+			end
+		end
+local torso = v:FindFirstChild("Torso") or v:FindFirstChild("UpperTorso")
+mainp.CFrame = mainp.CFrame:lerp(CFrame.new(mainp.Position,torso.Position),.05)
+else
+	looking = false
+	end
+end
+		
+	swait()
+end
