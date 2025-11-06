@@ -1,0 +1,793 @@
+local debounce = false
+local canAnim = false
+local grabTarget
+local worldMousePos
+
+local events = script.Events
+local sfx = script.SFX
+
+local myPlr = game:GetService("Players"):GetPlayerFromCharacter(script.Parent)
+
+local myChar = script.Parent
+local myHuman = myChar.Humanoid
+local myRoot = myChar.HumanoidRootPart
+local myTorso = myChar.Torso
+local PlayerGui=myPlr.PlayerGui 
+
+local sine = 0
+local force = nil
+local dir = nil
+local value1 = 0
+local value2 = 0
+local rootJointC0 = myRoot.RootJoint.C0
+
+myChar.Animate:Destroy()
+local idle = myHuman:LoadAnimation(script.Idle)
+
+function checkStatus()
+	local status
+	if myHuman.FloorMaterial == Enum.Material.Air then
+		status = "Fall"
+	else
+		if myHuman.MoveDirection ~= Vector3.new(0,0,0) then
+			status = "Walk"
+		else
+			status = "Idle"
+		end
+	end
+	return status
+end
+
+function createPart(color,material,transparency,anchored,canCollide,size)
+	local part = Instance.new("Part")
+	part.Color = color
+	part.Material = material
+	part.Transparency = transparency
+	part.Anchored = anchored
+	part.CanCollide = canCollide
+	part.Size = size
+	return part
+end
+
+function playSound(sound,parent)
+	sound = sound:Clone()
+	sound.PlayOnRemove = true
+	sound.Parent = parent
+	sound:Destroy()
+end
+
+function tween(obj,info,dictionary)
+	game:GetService("TweenService"):Create(obj,info,dictionary):Play()
+end
+
+function ragdollChar(char)
+	local human = char:FindFirstChildWhichIsA("Humanoid")
+	if human then
+		human.PlatformStand = true
+	end
+	for _,obj in pairs(char:GetChildren()) do
+		if obj:IsA("BasePart") then
+			for _,joint in pairs(obj:GetChildren()) do
+				if joint:IsA("Motor6D") then
+					local a0 = Instance.new("Attachment",joint.Part0)
+					a0.Name = "RagdollAttachment0"
+					a0.CFrame = joint.C0
+					local a1 = Instance.new("Attachment",joint.Part1)
+					a1.Name = "RagdollAttachment1"
+					a1.CFrame = joint.C1
+					local socket = Instance.new("BallSocketConstraint",joint.Part0)
+					socket.Attachment0 = a0
+					socket.Attachment1 = a1
+					socket.LimitsEnabled = true
+					socket.TwistLimitsEnabled = true
+					joint.Enabled = false
+				end
+			end
+		end
+	end
+end
+
+function unragdollChar(char)
+	local human = char:FindFirstChildWhichIsA("Humanoid")
+	if human then
+		human.PlatformStand = false
+	end
+	for _,obj in pairs(char:GetChildren()) do
+		if obj:IsA("BasePart") then
+			for _,joint in pairs(obj:GetChildren()) do
+				if joint:IsA("Motor6D") then
+					joint.Enabled = true
+				end
+			end
+			local ragdollThings = obj:FindFirstChild("RagdollAttachment0") or obj:FindFirstChild("RagdollAttachment1") or obj:FindFirstChildWhichIsA("BallSocketConstraint")
+			if ragdollThings then
+				ragdollThings:Destroy()
+			end
+		end
+	end
+end
+local RunService = game:GetService("RunService")
+function Rainbowify(name)
+	while RunService.Stepped:Wait() do
+		for hue = 0, 1, 0.06 do
+			name.Color = Color3.fromHSV(hue,1,1)
+			wait(0.001)
+		end
+	end
+end
+function chairSwing(crit)
+	local chair = createPart(Color3.fromRGB(188,155,93),Enum.Material.Wood,1,false,false,Vector3.new(3,6,3))
+	chair.CFrame = myChar["Right Arm"].CFrame * CFrame.new(-1.5,-3.5,-1)
+	spawn(function() Rainbowify(chair) end)
+	local mesh = Instance.new("SpecialMesh",chair)
+	mesh.MeshId = "rbxassetid://5784453173"
+	mesh.TextureId = "rbxassetid://5784453259"
+	mesh.Scale = Vector3.new(1.25,1.25,1.25)
+	local weldCo = Instance.new("WeldConstraint",chair)
+	weldCo.Part0 = myChar["Right Arm"]
+	weldCo.Part1 = chair
+
+	coroutine.wrap(function()
+		if crit then
+			wait(.25)
+		end
+		local ignoreList = {myChar}
+		chair.Touched:Connect(function(obj)
+			if table.find(ignoreList,obj.Parent) then return end
+			local human = obj.Parent:FindFirstChildWhichIsA("Humanoid")
+			if human then
+				table.insert(ignoreList,obj.Parent)
+				ragdollChar(obj.Parent)
+				obj.Parent:BreakJoints()
+				human.Health = -math.huge
+				local bodyV = Instance.new("BodyVelocity",obj)
+				bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+				bodyV.Velocity = CFrame.new(chair.Position,obj.Position).LookVector * 300
+				game:GetService("Debris"):AddItem(bodyV,.1)
+				if math.random(2) == 1 or crit then
+					if obj.Parent:FindFirstChild("Head") then
+						local billboard = Instance.new("BillboardGui",obj.Parent.Head)
+						billboard.AlwaysOnTop = true
+						billboard.StudsOffset = Vector3.new(0,1,0)
+						billboard.Size = UDim2.fromScale(2,2)
+						local image = Instance.new("ImageLabel",billboard)
+						image.BackgroundTransparency = 1
+						image.Size = UDim2.fromScale(1,1)
+						image.Image = "rbxassetid://283011882"
+						game:GetService("Debris"):AddItem(billboard,3)
+						tween(billboard,TweenInfo.new(1.5),{StudsOffset = Vector3.new(0,2,0),Size = UDim2.fromScale(3,3)})
+						tween(image,TweenInfo.new(3),{ImageTransparency = 1})
+					end
+					playSound(sfx.Crit,obj)
+					local rayP = RaycastParams.new()
+					rayP.FilterDescendantsInstances = ignoreList
+					local result = workspace:Raycast(obj.Position,Vector3.new(0,-50,0),rayP)
+					if result then
+						if obj.Parent:FindFirstChild("Head") then
+							bodyV:Destroy()
+							obj.Parent.Head.CFrame = CFrame.new(result.Position) * CFrame.Angles(math.rad(180),math.rad(180),0)
+							obj.Parent.Head.Anchored = true
+							for i = 1,24 do
+								local impactPart = createPart(result.Instance.Color,result.Material,0,true,true,Vector3.new(4,4,4))
+								impactPart.CFrame = CFrame.new(result.Position) * CFrame.Angles(0,math.rad(30*i),0) * CFrame.new(0,-1+math.random(-10,10)/10,-4) * CFrame.Angles(math.rad(45+math.random(-15,15)),0,0)
+								impactPart.Parent = workspace
+								game:GetService("Debris"):AddItem(impactPart,5)
+								local impactParticle = createPart(result.Instance.Color,result.Material,0,false,false,Vector3.new(math.random(2,4),math.random(2,4),math.random(2,4)))
+								impactParticle.CFrame = CFrame.new(result.Position)
+								impactParticle.Velocity = Vector3.new(math.random(-50,50),math.random(50,100),math.random(-50,50))
+								impactParticle.RotVelocity = Vector3.new(math.random(-50,50),math.random(-50,50),math.random(-50,50))
+								impactParticle.Parent = workspace
+								impactParticle:SetNetworkOwner(nil)
+								tween(impactParticle,TweenInfo.new(3),{Transparency = 1})
+								game:GetService("Debris"):AddItem(impactParticle,3)
+							end
+						end
+					end
+				end
+				sfx.Bonk.Pitch = math.random(9,11)/10
+				playSound(sfx.Bonk,obj)
+			end
+		end)
+	end)()
+	chair.Parent = myChar
+
+	tween(chair,TweenInfo.new(.2),{Transparency = 0})
+	tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(75),math.rad(180),0)})
+	tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(105),math.rad(180),0)})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,1,0) * CFrame.Angles(math.rad(160),math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,1,0) * CFrame.Angles(math.rad(160),math.rad(-90),0)})
+	wait(.25)
+	local connection = game:GetService("RunService").Heartbeat:Connect(function()
+		local chairTrail = chair:Clone()
+		chairTrail.Anchored = true
+		chairTrail:FindFirstChildWhichIsA("WeldConstraint"):Destroy()
+		chairTrail.Parent = workspace
+		game:GetService("Debris"):AddItem(chairTrail,.25)
+		tween(chairTrail,TweenInfo.new(.25),{Transparency = 1})
+	end)
+	playSound(sfx.Swing,myRoot)
+	tween(myTorso.Neck,TweenInfo.new(.2,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(120),math.rad(180),0)})
+	tween(myRoot.RootJoint,TweenInfo.new(.2,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{C0 = CFrame.Angles(math.rad(60),math.rad(180),0)})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{C0 = CFrame.new(1,0,-1) * CFrame.Angles(math.rad(60),math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{C0 = CFrame.new(-1,0,-1) * CFrame.Angles(math.rad(60),math.rad(-90),0)})
+	wait(.25)
+	chair:Destroy()
+	connection:Disconnect()
+	debounce = false
+	canAnim = false
+end
+function sodaBomb()
+	local bodyG = Instance.new("BodyGyro",myRoot)
+	bodyG.D = 0
+	local connection = game:GetService("RunService").Heartbeat:Connect(function()
+		if checkStatus() == "Fall" or myHuman.Jump then
+			bodyG.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
+			myRoot.Velocity = Vector3.new(0,0,0)
+		else
+			bodyG.MaxTorque = Vector3.new(0,math.huge,math.huge)
+		end
+		bodyG.CFrame = CFrame.new(myRoot.Position,worldMousePos)
+	end)
+	local soda = createPart(Color3.new(99,95,98),Enum.Material.SmoothPlastic,1,false,false,Vector3.new(.5,1,.5))
+	soda.CFrame = myChar["Right Arm"].CFrame * CFrame.new(-.25,-1,0) * CFrame.Angles(math.rad(-90),0,0)
+	spawn(function() Rainbowify(soda) end)
+	local mesh = Instance.new("SpecialMesh",soda)
+	mesh.MeshId = "rbxassetid://1032879482"
+	mesh.TextureId = "rbxassetid://1032879491"
+	mesh.Scale = Vector3.new(.2,.2,.2)
+	local weldCo = Instance.new("WeldConstraint",soda)
+	weldCo.Part0 = myChar["Right Arm"]
+	weldCo.Part1 = soda
+	soda.Parent = myChar
+	tween(soda,TweenInfo.new(.2),{Transparency = 0})
+	playSound(sfx.Open,myRoot)
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(.8,0.25,0) * CFrame.Angles(math.rad(90),math.rad(-5),math.rad(-60)) * CFrame.Angles(0,math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-.8,0,0) * CFrame.Angles(math.rad(90),math.rad(-15),math.rad(60)) * CFrame.Angles(0,math.rad(-90),0)})
+	wait(.25)
+	tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+	wait(.5)
+	weldCo:Destroy()
+	soda.Parent = workspace
+	soda:SetNetworkOwner(nil)
+	coroutine.wrap(function()
+		wait(2.25)
+		playSound(sfx.Explode,soda)
+		for i = 1,20 do
+			local particle = Instance.new("Part")
+			particle.Name = "Particle"
+			particle.Anchored = true
+			particle.CanCollide = false
+			particle.BrickColor = BrickColor.new("Neon orange")
+			particle.Material = Enum.Material.Neon
+			particle.CFrame = CFrame.new(soda.Position) * CFrame.new(0,-1,0) * CFrame.Angles(math.rad(math.random(15,90)*i),math.rad(math.random(15,90)*i),0)
+			particle.Size = Vector3.new(math.random(10,20),math.random(10,20),math.random(10,40))
+			local mesh = Instance.new("SpecialMesh",particle)
+			mesh.MeshType = Enum.MeshType.Sphere
+			particle.Parent = workspace
+			tween(particle,TweenInfo.new(.5),{Size = Vector3.new(math.random(0,12),math.random(0,12),math.random(20,60)),Transparency = 1})
+			tween(mesh,TweenInfo.new(.5),{Offset = Vector3.new(0,0,math.random(0,10))})
+			game:GetService("Debris"):AddItem(particle,.5)
+		end
+		for i,obj in pairs(game:GetDescendants()) do
+			if obj:IsA("Model") and obj ~= myChar then
+				local human = obj:FindFirstChildWhichIsA("Humanoid")
+				local torso = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+				if torso and human and (soda.Position-torso.Position).magnitude < 30 then
+					ragdollChar(obj)
+					obj:BreakJoints()
+					human.Health = -math.huge
+					local bodyV = Instance.new("BodyVelocity",torso)
+					bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+					bodyV.Velocity = CFrame.new(soda.Position,torso.Position).LookVector * 100
+					game:GetService("Debris"):AddItem(bodyV,.1)
+				end
+			end
+		end
+		soda:Destroy()
+	end)()
+	local bodyV = Instance.new("BodyVelocity",soda)
+	bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+	bodyV.Velocity = CFrame.new(soda.Position,worldMousePos).LookVector * 100
+	soda.RotVelocity = Vector3.new(100,0,0)
+	game:GetService("Debris"):AddItem(bodyV,.1)
+	game:GetService("Debris"):AddItem(soda,5)
+	coroutine.wrap(function()
+		wait(.05)
+		soda.CanCollide = true
+	end)()
+	local a0 = Instance.new("Attachment",soda)
+	a0.Position = Vector3.new(0,.25,0)
+	local a1 = Instance.new("Attachment",soda)
+	a1.Position = Vector3.new(0,-.25,0)
+	local trail = Instance.new("Trail",soda)
+	trail.FaceCamera = true
+	trail.Transparency = NumberSequence.new(0,1)
+	trail.Lifetime = .5
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	playSound(sfx.Swing,myRoot)
+	local espumaSound = sfx.Espuma:Clone()
+	espumaSound.Parent = soda
+	espumaSound:Play()
+	tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(75),math.rad(180),math.rad(45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(.8,.5,-.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(-30))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,.25,0) * CFrame.Angles(math.rad(-30),math.rad(-90),0)})
+	wait(.25)
+	bodyG:Destroy()
+	connection:Disconnect()
+	debounce = false
+	canAnim = false
+end
+
+function baseball()
+	local bodyG = Instance.new("BodyGyro",myRoot)
+	bodyG.D = 0
+	local connection = game:GetService("RunService").Heartbeat:Connect(function()
+		if checkStatus() == "Fall" or myHuman.Jump then
+			bodyG.MaxTorque = Vector3.new(0,0,0)
+			myRoot.Velocity = Vector3.new(0,0,0)
+		else
+			bodyG.MaxTorque = Vector3.new(0,0,0)
+		end
+		bodyG.CFrame = CFrame.new(myRoot.Position,worldMousePos)
+	end)
+	local soda = createPart(Color3.new(99,95,98),Enum.Material.SmoothPlastic,1,false,false,Vector3.new(.5,1,.5))
+	soda.CFrame = myChar["Right Arm"].CFrame * CFrame.new(-.25,-1,0) * CFrame.Angles(math.rad(-90),0,0)
+	spawn(function() Rainbowify(soda) end)
+	local mesh = Instance.new("SpecialMesh",soda)
+	mesh.MeshId = "rbxassetid://5136629080"
+	mesh.TextureId = "rbxassetid://5136629108"
+	mesh.Scale = Vector3.new(.4,.4,.4)
+	local weldCo = Instance.new("WeldConstraint",soda)
+	weldCo.Part0 = myChar["Right Arm"]
+	weldCo.Part1 = soda
+	soda.Parent = myChar
+	tween(soda,TweenInfo.new(.2),{Transparency = 0})
+	playSound(sfx.Swing,myRoot)
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(.8,0.25,0) * CFrame.Angles(math.rad(90),math.rad(-5),math.rad(-60)) * CFrame.Angles(0,math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-.8,0,0) * CFrame.Angles(math.rad(90),math.rad(-15),math.rad(60)) * CFrame.Angles(0,math.rad(-90),0)})
+	wait(.25)
+	tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+	wait(.5)
+	weldCo:Destroy()
+	soda.Parent = workspace
+	soda:SetNetworkOwner(nil)
+	coroutine.wrap(function()
+		local ignoreList = {myChar}
+		soda.Touched:Connect(function(obj)
+			if table.find(ignoreList,obj.Parent) then return end
+			local human = obj.Parent:FindFirstChildWhichIsA("Humanoid")
+			if human then
+				table.insert(ignoreList,obj.Parent)
+				human.Health = -math.huge
+				ragdollChar(obj.Parent)
+				obj.Parent:BreakJoints()
+				local bodyV = Instance.new("BodyVelocity",obj)
+				bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+				bodyV.Velocity = CFrame.new(soda.Position,obj.Position).LookVector * -100
+				game:GetService("Debris"):AddItem(bodyV,.1)
+					if obj.Parent:FindFirstChild("Head") then
+						local billboard = Instance.new("BillboardGui",obj.Parent.Head)
+						billboard.AlwaysOnTop = true
+						billboard.StudsOffset = Vector3.new(0,1,0)
+						billboard.Size = UDim2.fromScale(2,2)
+						local image = Instance.new("ImageLabel",billboard)
+						image.BackgroundTransparency = 1
+						image.Size = UDim2.fromScale(3.5,3.5)
+					image.Image = "rbxassetid://68625222"
+						game:GetService("Debris"):AddItem(billboard,3)
+						tween(billboard,TweenInfo.new(1.5),{StudsOffset = Vector3.new(0,2,0),Size = UDim2.fromScale(3,3)})
+						tween(image,TweenInfo.new(5),{ImageTransparency = 1})
+				end
+				sfx.Bonk.Pitch = math.random(9,11)/10
+				playSound(sfx.Bonk,obj)
+					playSound(sfx.Crit2,obj)
+					local rayP = RaycastParams.new()
+					rayP.FilterDescendantsInstances = ignoreList
+				local result = workspace:Raycast(obj.Position,Vector3.new(0,-50,0),rayP)
+				if result then
+					local human = obj:FindFirstChildWhichIsA("Humanoid")
+					local torso = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+						if obj.Parent:FindFirstChild("Head") then
+						obj.Parent.Head.Anchored = false
+						end
+					end
+				end
+			end
+		)
+	end)()
+	local bodyV = Instance.new("BodyVelocity",soda)
+	bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+	bodyV.Velocity = CFrame.new(soda.Position,worldMousePos).LookVector * 450
+	soda.RotVelocity = Vector3.new(100,0,0)
+	game:GetService("Debris"):AddItem(bodyV,.1)
+	game:GetService("Debris"):AddItem(soda,5)
+	coroutine.wrap(function()
+		wait(.05)
+		soda.CanCollide = true
+	end)()
+	local a0 = Instance.new("Attachment",soda)
+	a0.Position = Vector3.new(0,.25,0)
+	local a1 = Instance.new("Attachment",soda)
+	a1.Position = Vector3.new(0,-.25,0)
+	local trail = Instance.new("Trail",soda)
+	trail.FaceCamera = true
+	trail.Transparency = NumberSequence.new(0,1)
+	trail.Lifetime = .5
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(75),math.rad(180),math.rad(45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(.8,.5,-.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(-30))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,.25,0) * CFrame.Angles(math.rad(-30),math.rad(-90),0)})
+	wait(.25)
+	bodyG:Destroy()
+	connection:Disconnect()
+	debounce = false
+	canAnim = false
+	end
+
+function intoJar()
+	myRoot.Anchored = true
+	tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-60))})
+	tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(75),math.rad(180),math.rad(90))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(.8,.5,-.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(-30))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,.25,0) * CFrame.Angles(math.rad(-30),math.rad(-90),0)})
+	wait(.25)
+	local target = grabTarget
+	grab()
+	debounce = true
+	canAnim = true
+	ragdollChar(target)
+	local bodyV = Instance.new("BodyVelocity",target.HumanoidRootPart)
+	bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+	bodyV.Velocity = Vector3.new(0,100,0)
+	game:GetService("Debris"):AddItem(bodyV,.1)
+	playSound(sfx.Swing,myRoot)
+	tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+	wait(.25)
+	canAnim = false
+	local jar = createPart(Color3.fromRGB(188,155,93),Enum.Material.SmoothPlastic,0,true,false,Vector3.new(6,10,6))
+	jar.CFrame = myRoot.CFrame * CFrame.new(0,1.5,-8)
+	local mesh = Instance.new("SpecialMesh",jar)
+	mesh.MeshId = "http://www.roblox.com/asset/?id=115289510"
+	mesh.TextureId = "http://www.roblox.com/asset?id=115340918"
+	jar.Parent = workspace
+	tween(mesh,TweenInfo.new(.5),{Scale = Vector3.new(6,6,6)})
+	wait(.5)
+	target.HumanoidRootPart.Anchored = true
+	playSound(sfx.FemurBreaker,jar)
+	tween(target.HumanoidRootPart,TweenInfo.new(1),{CFrame = jar.CFrame})
+	myRoot.Anchored = false
+	debounce = false
+	wait(1)
+	jar.Size = Vector3.new(1,1.5,1)
+	tween(mesh,TweenInfo.new(.5),{Scale = Vector3.new(1,1,1)})
+	target:Destroy()
+	wait(.5)
+	jar.Anchored = false
+	jar.CanCollide = true
+	game:GetService("Debris"):AddItem(jar,5)
+end
+
+function rocketLauncher()
+	local launcher = createPart(Color3.new(1,0,0),Enum.Material.SmoothPlastic,0,false,false,Vector3.new(1,1,1))
+	launcher.CFrame = myChar["Right Arm"].CFrame * CFrame.new(-.25,0,-.5) * CFrame.Angles(math.rad(180),0,math.rad(90))
+	launcher.Parent = myChar
+	launcher:SetNetworkOwner(nil)
+	spawn(function() Rainbowify(launcher) end)
+	local launcherMesh = Instance.new("SpecialMesh",launcher)
+	launcherMesh.MeshId = "rbxasset://fonts/rocketlauncher.mesh"
+	launcherMesh.TextureId = "rbxasset://textures/rocketlaunchertex.png"
+	local weldCo = Instance.new("WeldConstraint",launcher)
+	weldCo.Part0 = myChar["Right Arm"]
+	weldCo.Part1 = launcher
+	local bodyG = Instance.new("BodyGyro",myRoot)
+	bodyG.D = 0
+	local connection = game:GetService("RunService").Heartbeat:Connect(function()
+		if checkStatus() == "Fall" or myHuman.Jump then
+			bodyG.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
+			myRoot.Velocity = Vector3.new(0,0,0)
+		else
+			bodyG.MaxTorque = Vector3.new(0,math.huge,math.huge)
+		end
+		bodyG.CFrame = CFrame.new(myRoot.Position,worldMousePos)
+	end)
+	game:GetService("Debris"):AddItem(bodyG,.5)
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(.5,.25,0) * CFrame.Angles(math.rad(90),math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(0,-.35,-1) * CFrame.Angles(math.rad(180),math.rad(-30),math.rad(30))})
+	wait(.25)
+	playSound(sfx.Launch,myRoot)
+	myTorso["Right Shoulder"].C0 = CFrame.new(.5,.25,0) * CFrame.Angles(math.rad(105),math.rad(90),0)
+	myTorso["Left Shoulder"].C0 = CFrame.new(0,-.35,-1) * CFrame.Angles(math.rad(195),math.rad(-30),math.rad(30))
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.25),{C0 = CFrame.new(.5,.25,0) * CFrame.Angles(math.rad(90),math.rad(90),0)})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.25),{C0 = CFrame.new(0,-.35,-1) * CFrame.Angles(math.rad(180),math.rad(-30),math.rad(30))})
+	local rocket = createPart(Color3.new(1,0,0),Enum.Material.Plastic,0,false,true,Vector3.new(1,1,3))
+	rocket.Name = "Rocket"
+	rocket.CFrame = CFrame.new(launcher.Position,worldMousePos)
+	spawn(function() Rainbowify(rocket) end)
+	local rocketMesh = Instance.new("SpecialMesh",rocket)
+	rocketMesh.MeshId = "http://www.roblox.com/asset/?id=94690081"
+	rocketMesh.Scale = Vector3.new(2,2,2)
+	rocketMesh.VertexColor = Vector3.new(1,0,0)
+	local bodyV = Instance.new("BodyVelocity",rocket)
+	bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+	bodyV.Velocity = rocket.CFrame.LookVector * 1000
+	local guidedEvent = game:GetService("RunService").Heartbeat:Connect(function()
+		rocket.CFrame = CFrame.new(rocket.Position,worldMousePos)
+		bodyV.Velocity = rocket.CFrame.LookVector * 1000
+	end)
+	local ignoreList = {myChar}
+	rocket.Touched:Connect(function(obj)
+		if table.find(ignoreList,obj.Parent) or obj:FindFirstAncestorWhichIsA("Accessory") or obj:FindFirstAncestorWhichIsA("Tool") then return end
+		for i,obj in pairs(game:GetDescendants()) do
+			if obj:IsA("Model") and obj ~= myChar then
+				local human = obj:FindFirstChildWhichIsA("Humanoid")
+				local torso = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+				if torso and human and (rocket.Position-torso.Position).magnitude < 12 then
+					ragdollChar(obj)
+					obj:BreakJoints()
+					human.Health = -math.huge
+					local bodyV = Instance.new("BodyVelocity",torso)
+					bodyV.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+					bodyV.Velocity = CFrame.new(rocket.Position,torso.Position).LookVector * 100
+					game:GetService("Debris"):AddItem(bodyV,.1)
+				end
+			end
+		end
+		local explosion = Instance.new("Explosion",workspace)
+		explosion.BlastRadius = 0
+		explosion.Position = rocket.Position
+		playSound(sfx.Explode,rocket)
+		rocket:Destroy()
+		guidedEvent:Disconnect()
+	end)
+	local a0 = Instance.new("Attachment",rocket)
+	a0.Position = Vector3.new(0,.25,0)
+	local a1 = Instance.new("Attachment",rocket)
+	a1.Position = Vector3.new(0,-.25,0)
+	local trail = Instance.new("Trail",rocket)
+	trail.Texture = "rbxassetid://6588257032"
+	trail.FaceCamera = true
+	trail.Color = ColorSequence.new(Color3.new(1,0,0))
+	trail.Transparency = NumberSequence.new(0,1)
+	trail.LightEmission = .5
+	trail.Lifetime = 1
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	local swoosh = sfx.Swoosh:Clone()
+	swoosh.Parent = rocket
+	swoosh:Play()
+	rocket.Parent = workspace
+	rocket:SetNetworkOwner(nil)
+	game:GetService("Debris"):AddItem(rocket,30)
+	wait(.25)
+	launcher:Destroy()
+	connection:Disconnect()
+	debounce = false
+	canAnim = false
+end
+
+function brazilPortal()
+	myRoot.Anchored = true
+	local portal = createPart(Color3.fromRGB(163, 162, 165),Enum.Material.SmoothPlastic,1,true,true,Vector3.new(12,16,4))
+	portal.CFrame = myRoot.CFrame * CFrame.new(0,-16,-15)
+	local mesh = Instance.new("SpecialMesh",portal)
+	mesh.MeshId = "rbxassetid://7339059822"
+	mesh.TextureId = "rbxassetid://7339720448"
+	mesh.Scale = Vector3.new(2,2,2)
+	portal.Parent = workspace
+	game:GetService("Debris"):AddItem(portal,1.75)
+	tween(portal,TweenInfo.new(.5),{CFrame = portal.CFrame * CFrame.new(0,21,0),Transparency = 0})
+	playSound(sfx.Brazil,myRoot)
+	tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+	wait(.5)
+	local target = grabTarget
+	grab()
+	debounce = true
+	canAnim = true
+	for _,obj in pairs(target:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			tween(obj,TweenInfo.new(1),{Transparency = 1})
+		end
+	end
+	target.HumanoidRootPart.Anchored = true
+	tween(target.HumanoidRootPart, TweenInfo.new(.25),{CFrame = portal.CFrame})
+	tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-30))})
+	tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(75),math.rad(180),math.rad(45))})
+	tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(.8,.5,-.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(-30))})
+	tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,.25,0) * CFrame.Angles(math.rad(-30),math.rad(-90),0)})
+	wait(.5)
+	target:Destroy()
+	mesh.VertexColor = Vector3.new(100,100,100)
+	tween(portal,TweenInfo.new(1),{Transparency = 1})
+	myRoot.Anchored = false
+	debounce = false
+	canAnim = false
+end
+
+function grab()
+	if grabTarget then
+		debounce = false
+		canAnim = false
+		if grabTarget:FindFirstChild("GrabWeld") then
+			grabTarget.GrabWeld:Destroy()
+		end
+		unragdollChar(grabTarget)
+		grabTarget = nil
+	else
+		tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+		tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+		tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+		tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+		wait(.25)
+		local canGrab = true
+		myChar["Right Arm"].Touched:Connect(function(obj)
+			if obj.Parent == myChar or not canGrab then return end
+			local human = obj.Parent:FindFirstChildWhichIsA("Humanoid")
+			if human then
+				if obj.Parent:FindFirstChild("HumanoidRootPart") then
+					canGrab = false
+					ragdollChar(obj.Parent)
+					obj.Parent.HumanoidRootPart.CFrame = myChar["Right Arm"].CFrame * CFrame.new(0,-1.25,0) * CFrame.Angles(math.rad(-90),math.rad(180),math.rad(-45))
+					local weldCo = Instance.new("WeldConstraint",obj.Parent)
+					weldCo.Name = "GrabWeld"
+					weldCo.Part0 = myChar["Right Arm"]
+					weldCo.Part1 = obj.Parent.HumanoidRootPart
+					grabTarget = obj.Parent
+					human.Died:Connect(function()
+						if grabTarget then
+							grab()
+						end
+					end)
+				end
+			end
+		end)
+		playSound(sfx.Swing,myRoot)
+		tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(60))})
+		tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(1,0.5,-0.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(60))})
+		tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,0.5,0) * CFrame.Angles(0,math.rad(-90),0)})
+		tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-60))})
+		wait(.25)
+		canGrab = false
+		debounce = false
+		if not grabTarget then
+			canAnim = false
+		end
+	end
+end
+
+events.ChangeMousePos.OnServerEvent:Connect(function(plr,hitP)
+	worldMousePos = hitP
+end)
+events.LClick.OnServerEvent:Connect(function()
+	if debounce then return end
+	debounce = true
+	canAnim = true
+	if grabTarget then
+		myHuman.WalkSpeed = 0
+		local target = grabTarget
+		tween(myTorso.Neck,TweenInfo.new(.2),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(30))})
+		tween(myRoot.RootJoint,TweenInfo.new(.2),{C0 = CFrame.Angles(math.rad(90),math.rad(180),math.rad(-45))})
+		tween(myTorso["Right Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(1,0.5,0) * CFrame.Angles(math.rad(90),math.rad(30),math.rad(60))})
+		tween(myTorso["Left Shoulder"],TweenInfo.new(.2),{C0 = CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30))})
+		wait(.25)
+		playSound(sfx.Swing,myRoot)
+		tween(myTorso.Neck,TweenInfo.new(.1),{C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),math.rad(-30))})
+		tween(myRoot.RootJoint,TweenInfo.new(.1),{C0 = CFrame.Angles(math.rad(75),math.rad(180),math.rad(45))})
+		tween(myTorso["Right Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(.8,.5,-.5) * CFrame.Angles(math.rad(60),math.rad(30),math.rad(-30))})
+		tween(myTorso["Left Shoulder"],TweenInfo.new(.1),{C0 = CFrame.new(-1,.25,0) * CFrame.Angles(math.rad(-30),math.rad(-90),0)})
+		grab()
+		debounce = true
+		canAnim = true
+		myHuman.WalkSpeed = 0
+		tween(target.HumanoidRootPart,TweenInfo.new(.25),{CFrame = myRoot.CFrame * CFrame.new(0,-2,-8) * CFrame.Angles(math.rad(90),0,0)})
+		ragdollChar(target)
+		wait(.25)
+		chairSwing(true)
+		wait(3)
+		unragdollChar(target)
+	else
+		chairSwing()
+	end
+end)
+events.KeyDown.OnServerEvent:Connect(function(plr,key)
+	if debounce then return end
+	local keybinds = {"1","2","3","4"}
+	if table.find(keybinds,key) then
+		debounce = true
+		canAnim = true
+		if key == "1" then
+			if grabTarget then
+				intoJar()
+			else
+				sodaBomb()
+			end
+		elseif key == "2" then
+			if grabTarget then
+				brazilPortal()
+			else
+				rocketLauncher()
+			end
+		elseif key == "3" then
+			grab()
+		elseif key == "4" then
+			baseball()
+		end
+	end
+end)
+
+myHuman.HealthChanged:Connect(function()
+	myHuman.Health = math.huge
+end)
+
+while true do
+	if myPlr.Backpack:FindFirstChildWhichIsA("Tool") then
+		myPlr.Backpack:FindFirstChildWhichIsA("Tool"):Destroy()
+	end
+	if myChar:FindFirstChildWhichIsA("Tool") then
+		myChar:FindFirstChildWhichIsA("Tool"):Destroy()
+	end
+	if not debounce then
+		myHuman.WalkSpeed = 50
+		myHuman.JumpPower = 100
+		myHuman.JumpHeight = 14.4
+	end
+	sine = tick() * 75
+	local status = checkStatus()
+	if status == "Idle" then
+		if not canAnim then
+			myTorso.Neck.C0 = myTorso.Neck.C0:Lerp(CFrame.new(0,1,0) * CFrame.Angles(math.rad(90),math.rad(180),0),.5)
+			myRoot.RootJoint.C0 = myRoot.RootJoint.C0:Lerp(CFrame.Angles(math.rad(90),math.rad(180),0),.05)
+			myTorso["Right Shoulder"].C0 = myTorso["Right Shoulder"].C0:Lerp(CFrame.new(1,0.5,0) * CFrame.Angles(0,math.rad(90),0),.5)
+			myTorso["Left Shoulder"].C0 = myTorso["Left Shoulder"].C0:Lerp(CFrame.new(-1,0.5,0) * CFrame.Angles(0,math.rad(-90),0),.5)
+		end
+		myTorso["Right Hip"].C0 = myTorso["Right Hip"].C0:Lerp(CFrame.new(1,-1,0) * CFrame.Angles(0,math.rad(90),0),.5)
+		myTorso["Left Hip"].C0 = myTorso["Left Hip"].C0:Lerp(CFrame.new(-1,-1,0) * CFrame.Angles(0,math.rad(-90),0),.5)
+	elseif status == "Walk" then
+		if not canAnim then 
+			myTorso.Neck.C0 = myTorso.Neck.C0:Lerp(CFrame.new(0,1,-0.25) * CFrame.Angles(math.rad(90),math.rad(180),0) * CFrame.Angles(math.rad(0-math.cos(sine/3.5)*6),0,0) * CFrame.new(0,0.25,0),.5)
+			myRoot.RootJoint.C0 = myRoot.RootJoint.C0:Lerp(CFrame.new(0,math.sin(sine/3.5)/1.5,0) * CFrame.Angles(math.rad(90),math.rad(180),0) * CFrame.Angles(math.rad(5),0,myRoot.RotVelocity.y/20+math.cos(sine/7)/10),.5)
+			myTorso["Right Shoulder"].C0 = myTorso["Right Shoulder"].C0:Lerp(CFrame.new(1,0.4,0) * CFrame.Angles(0,math.rad(90),0) * CFrame.Angles(0,0,-math.sin(sine/7)*1.5),.5)
+			myTorso["Left Shoulder"].C0 = myTorso["Left Shoulder"].C0:Lerp(CFrame.new(-1,0.4,0) * CFrame.Angles(0,math.rad(-90),0) * CFrame.Angles(0,0,-math.sin(sine/7)*1.5),.5)
+		end
+		myTorso["Right Hip"].C0 = myTorso["Right Hip"].C0:Lerp(CFrame.new(1,-1+math.cos(sine/7)/3,0) * CFrame.Angles(0,math.rad(90),0) * CFrame.Angles(0,0,math.sin(sine/7)*1.5),.5)
+		myTorso["Left Hip"].C0 = myTorso["Left Hip"].C0:Lerp(CFrame.new(-1,-1-math.cos(sine/7)/3,0) * CFrame.Angles(0,math.rad(-90),0) * CFrame.Angles(0,0,math.sin(sine/7)*1.5),.5)
+	elseif status == "Fall" then
+		if not canAnim then
+			myTorso.Neck.C0 = myTorso.Neck.C0:Lerp(CFrame.new(0,1,0) * CFrame.Angles(math.rad(60),math.rad(180),0),.5)
+			myRoot.RootJoint.C0 = myRoot.RootJoint.C0:Lerp(CFrame.Angles(math.rad(90),math.rad(180),0),.5)
+			myTorso["Right Shoulder"].C0 = myTorso["Right Shoulder"].C0:Lerp(CFrame.new(1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(60),math.rad(30)),.5)
+			myTorso["Left Shoulder"].C0 = myTorso["Left Shoulder"].C0:Lerp(CFrame.new(-1,.25,-.5) * CFrame.Angles(math.rad(15),math.rad(-60),math.rad(-30)),.5)
+			myTorso["Right Hip"].C0 = myTorso["Right Hip"].C0:Lerp(CFrame.new(1,-.5,-.5) * CFrame.Angles(math.rad(-15),math.rad(90),0),.5)
+			myTorso["Left Hip"].C0 = myTorso["Left Hip"].C0:Lerp(CFrame.new(-1,-1,0) * CFrame.Angles(math.rad(-15),math.rad(-90),0),.5)
+			repeat wait() until myHuman.FloorMaterial ~= Enum.Material.Air or not canAnim
+		end
+	end
+	force = myRoot.Velocity * Vector3.new(1,0,1)
+	if force.Magnitude > 2 then
+		dir = force.Unit
+		value1 = myRoot.CFrame.RightVector:Dot(dir)
+		value2 = myRoot.CFrame.LookVector:Dot(dir)
+	else
+		value1 = 0
+		value2 = 0
+	end
+	if not canAnim then
+		myRoot.RootJoint.C0 = myRoot.RootJoint.C0:Lerp(rootJointC0 * CFrame.Angles(math.rad(value2 * 30), math.rad(-value1 * 30), 0), 0.5)
+	end
+	game:GetService("RunService").Heartbeat:Wait()
+end
