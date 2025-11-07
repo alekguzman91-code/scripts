@@ -1,0 +1,617 @@
+require(3747589551)()
+-- nebula's ezconvert
+--[[
+PUT YOUR SCRIPTS BELOW HERE VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV	
+]]
+color = Color3.fromRGB(math.random(1,255),math.random(1,255),math.random(1,255))
+player = game.Players.LocalPlayer
+char = player.Character
+mouse = player:GetMouse()
+walkAnim = 0
+mas = char.HumanoidRootPart
+ScreenGui0 = Instance.new("ScreenGui")
+BillboardGui1 = Instance.new("BillboardGui")
+ImageLabel2 = Instance.new("ImageLabel")
+ImageLabel3 = Instance.new("ImageLabel")
+ImageLabel4 = Instance.new("ImageLabel")
+ScreenGui5 = Instance.new("ScreenGui")
+BillboardGui6 = Instance.new("BillboardGui")
+ImageLabel7 = Instance.new("ImageLabel")
+ImageLabel8 = Instance.new("ImageLabel")
+ImageLabel9 = Instance.new("ImageLabel")
+ScreenGui10 = Instance.new("ScreenGui")
+BillboardGui11 = Instance.new("BillboardGui")
+ImageLabel12 = Instance.new("ImageLabel")
+ImageLabel13 = Instance.new("ImageLabel")
+ImageLabel14 = Instance.new("ImageLabel")
+ScreenGui15 = Instance.new("ScreenGui")
+BillboardGui16 = Instance.new("BillboardGui")
+ImageLabel17 = Instance.new("ImageLabel")
+ImageLabel18 = Instance.new("ImageLabel")
+ImageLabel19 = Instance.new("ImageLabel")
+ScreenGui20 = Instance.new("ScreenGui")
+BillboardGui21 = Instance.new("BillboardGui")
+ImageLabel22 = Instance.new("ImageLabel")
+ImageLabel23 = Instance.new("ImageLabel")
+ImageLabel24 = Instance.new("ImageLabel")
+ScreenGui25 = Instance.new("ScreenGui")
+BillboardGui26 = Instance.new("BillboardGui")
+ImageLabel27 = Instance.new("ImageLabel")
+ImageLabel28 = Instance.new("ImageLabel")
+ImageLabel29 = Instance.new("ImageLabel")
+ScreenGui30 = Instance.new("ScreenGui")
+BillboardGui31 = Instance.new("BillboardGui")
+ImageLabel32 = Instance.new("ImageLabel")
+ImageLabel33 = Instance.new("ImageLabel")
+ImageLabel34 = Instance.new("ImageLabel")
+ScreenGui0.Name = "idle"
+ScreenGui0.Parent = mas
+BillboardGui1.Name = "idle"
+BillboardGui1.Parent = ScreenGui0
+BillboardGui1.LightInfluence = 1
+BillboardGui1.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui1.Active = true
+BillboardGui1.ClipsDescendants = true
+BillboardGui1.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel2.Name = "crewmate_shadow"
+ImageLabel2.Parent = BillboardGui1
+ImageLabel2.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel2.BackgroundTransparency = 1
+ImageLabel2.Image = "http://www.roblox.com/asset/?id=5716161966"
+ImageLabel3.Name = "crewmate"
+ImageLabel3.Parent = BillboardGui1
+ImageLabel3.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel3.BackgroundTransparency = 1
+ImageLabel3.Image = "http://www.roblox.com/asset/?id=5716237647"
+ImageLabel3.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel4.Name = "crewmate_glass"
+ImageLabel4.Parent = BillboardGui1
+ImageLabel4.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel4.BackgroundTransparency = 1
+ImageLabel4.Image = "http://www.roblox.com/asset/?id=5716237702"
+ScreenGui5.Name = "walk1"
+ScreenGui5.Parent = mas
+BillboardGui6.Name = "walk1"
+BillboardGui6.Parent = ScreenGui5
+BillboardGui6.LightInfluence = 1
+BillboardGui6.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui6.Active = true
+BillboardGui6.ClipsDescendants = true
+BillboardGui6.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel7.Name = "crewmate_glass"
+ImageLabel7.Parent = BillboardGui6
+ImageLabel7.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel7.BackgroundTransparency = 1
+ImageLabel7.Image = "http://www.roblox.com/asset/?id=5716161796"
+ImageLabel8.Name = "crewmate_shadow"
+ImageLabel8.Parent = BillboardGui6
+ImageLabel8.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel8.BackgroundTransparency = 1
+ImageLabel8.Image = "http://www.roblox.com/asset/?id=5716161966"
+ImageLabel9.Name = "crewmate"
+ImageLabel9.Parent = BillboardGui6
+ImageLabel9.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel9.BackgroundTransparency = 1
+ImageLabel9.Image = "http://www.roblox.com/asset/?id=5716160239"
+ImageLabel9.ImageColor3 = Color3.new(1, 0, 0)
+ScreenGui10.Name = "walk2"
+ScreenGui10.Parent = mas
+BillboardGui11.Name = "walk2"
+BillboardGui11.Parent = ScreenGui10
+BillboardGui11.LightInfluence = 1
+BillboardGui11.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui11.Active = true
+BillboardGui11.ClipsDescendants = true
+BillboardGui11.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel12.Name = "crewmate"
+ImageLabel12.Parent = BillboardGui11
+ImageLabel12.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel12.BackgroundTransparency = 1
+ImageLabel12.Image = "http://www.roblox.com/asset/?id=5716160015"
+ImageLabel12.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel13.Name = "crewmate_shadow"
+ImageLabel13.Parent = BillboardGui11
+ImageLabel13.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel13.BackgroundTransparency = 1
+ImageLabel13.Image = "http://www.roblox.com/asset/?id=5716788708"
+ImageLabel14.Name = "crewmate_glass"
+ImageLabel14.Parent = BillboardGui11
+ImageLabel14.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel14.BackgroundTransparency = 1
+ImageLabel14.Image = "http://www.roblox.com/asset/?id=5716161796"
+ScreenGui15.Name = "walk3"
+ScreenGui15.Parent = mas
+BillboardGui16.Name = "walk3"
+BillboardGui16.Parent = ScreenGui15
+BillboardGui16.LightInfluence = 1
+BillboardGui16.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui16.Active = true
+BillboardGui16.ClipsDescendants = true
+BillboardGui16.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel17.Name = "crewmate_shadow"
+ImageLabel17.Parent = BillboardGui16
+ImageLabel17.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel17.BackgroundTransparency = 1
+ImageLabel17.Image = "http://www.roblox.com/asset/?id=5716788708"
+ImageLabel18.Name = "crewmate"
+ImageLabel18.Parent = BillboardGui16
+ImageLabel18.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel18.BackgroundTransparency = 1
+ImageLabel18.Image = "http://www.roblox.com/asset/?id=5716159936"
+ImageLabel18.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel19.Name = "crewmate_glass"
+ImageLabel19.Parent = BillboardGui16
+ImageLabel19.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel19.BackgroundTransparency = 1
+ImageLabel19.Image = "http://www.roblox.com/asset/?id=5716160290"
+ScreenGui20.Name = "walk4"
+ScreenGui20.Parent = mas
+BillboardGui21.Name = "walk4"
+BillboardGui21.Parent = ScreenGui20
+BillboardGui21.LightInfluence = 1
+BillboardGui21.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui21.Active = true
+BillboardGui21.ClipsDescendants = true
+BillboardGui21.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel22.Name = "crewmate_shadow"
+ImageLabel22.Parent = BillboardGui21
+ImageLabel22.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel22.BackgroundTransparency = 1
+ImageLabel22.Image = "http://www.roblox.com/asset/?id=5716788708"
+ImageLabel23.Name = "crewmate"
+ImageLabel23.Parent = BillboardGui21
+ImageLabel23.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel23.BackgroundTransparency = 1
+ImageLabel23.Image = "http://www.roblox.com/asset/?id=5716160172"
+ImageLabel23.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel24.Name = "crewmate_glass"
+ImageLabel24.Parent = BillboardGui21
+ImageLabel24.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel24.BackgroundTransparency = 1
+ImageLabel24.Image = "http://www.roblox.com/asset/?id=5716160460"
+ScreenGui25.Name = "walk5"
+ScreenGui25.Parent = mas
+BillboardGui26.Name = "walk5"
+BillboardGui26.Parent = ScreenGui25
+BillboardGui26.LightInfluence = 1
+BillboardGui26.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui26.Active = true
+BillboardGui26.ClipsDescendants = true
+BillboardGui26.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel27.Name = "crewmate_shadow"
+ImageLabel27.Parent = BillboardGui26
+ImageLabel27.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel27.BackgroundTransparency = 1
+ImageLabel27.Image = "http://www.roblox.com/asset/?id=5716788708"
+ImageLabel28.Name = "crewmate"
+ImageLabel28.Parent = BillboardGui26
+ImageLabel28.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel28.BackgroundTransparency = 1
+ImageLabel28.Image = "http://www.roblox.com/asset/?id=5716160080"
+ImageLabel28.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel29.Name = "crewmate_glass"
+ImageLabel29.Parent = BillboardGui26
+ImageLabel29.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel29.BackgroundTransparency = 1
+ImageLabel29.Image = "http://www.roblox.com/asset/?id=5716160398"
+ScreenGui30.Name = "walk6"
+ScreenGui30.Parent = mas
+BillboardGui31.Name = "walk6"
+BillboardGui31.Parent = ScreenGui30
+BillboardGui31.LightInfluence = 1
+BillboardGui31.Size = UDim2.new(4, 0, 5.5999999, 0)
+BillboardGui31.Active = true
+BillboardGui31.ClipsDescendants = true
+BillboardGui31.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ImageLabel32.Name = "crewmate"
+ImageLabel32.Parent = BillboardGui31
+ImageLabel32.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel32.BackgroundTransparency = 1
+ImageLabel32.Image = "http://www.roblox.com/asset/?id=5716160172"
+ImageLabel32.ImageColor3 = Color3.new(1, 0, 0)
+ImageLabel33.Name = "crewmate_shadow"
+ImageLabel33.Parent = BillboardGui31
+ImageLabel33.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel33.BackgroundTransparency = 1
+ImageLabel33.Image = "http://www.roblox.com/asset/?id=5716788708"
+ImageLabel34.Name = "crewmate_glass"
+ImageLabel34.Parent = BillboardGui31
+ImageLabel34.Size = UDim2.new(1, 0, 1, 0)
+ImageLabel34.BackgroundTransparency = 1
+ImageLabel34.Image = "http://www.roblox.com/asset/?id=5716160460"
+idle =  "idle"
+walk1 = "walk1"
+walk2 = "walk2"
+walk3 = "walk3"
+walk4 = "walk4"
+walk5 = "walk5"
+walk6 = "walk6"
+torso = char.HumanoidRootPart
+for i,v in pairs(char:GetDescendants()) do
+	if v.ClassName == "ScreenGui" then
+		for i,a in pairs(v:GetChildren()) do
+			a.Parent = v.Parent
+		end
+	end
+end
+for i,v in pairs(char:GetDescendants()) do
+	if v.ClassName == "ScreenGui" then
+		v:Destroy()
+	end
+end
+function enable(name)
+	torso:FindFirstChild(name).Enabled = true
+	for i,v in pairs(torso:GetDescendants()) do
+		if v.ClassName == "BillboardGui" then
+			if v.Name ~= name then
+				v.Enabled = false
+			end
+		end
+	end
+end
+function flipleft()
+	for i,v in pairs(torso:GetDescendants()) do
+		if v.ClassName == "ImageLabel" then
+			v.ImageRectSize = Vector2.new(-1024,1024)
+			v.ImageRectOffset = Vector2.new(1024,0)
+		end
+	end
+end
+a =false
+d = false
+function flipright()
+	for i,v in pairs(torso:GetDescendants()) do
+		if v.ClassName == "ImageLabel" then
+			v.ImageRectSize = Vector2.new(0,0)
+			v.ImageRectOffset = Vector2.new(0,0)
+		end
+	end
+end
+mouse.KeyDown:Connect(function(key)
+	if key == "d" then
+		d = true
+		a = false
+	end	
+end)
+mouse.KeyDown:Connect(function(key)
+	if key == "a" then
+		d = false
+		a = true
+	end	
+end)
+for i,v in pairs(torso:GetDescendants()) do
+	if v.ClassName == "ImageLabel" then
+		if v.Name == "crewmate" then
+			v.ImageColor3 = color
+		end
+	end
+end
+function getMagnitudeXZ(velocity)
+	return math.sqrt(math.abs(velocity.X)^2 + math.abs(velocity.Z)^2)
+end
+function aah(varpar)
+	if varpar.Name ~= "gun" then
+		varpar.Transparency = 1
+	end
+end
+cooldowna = false
+game:GetService("RunService").Stepped:Connect(function()
+	for i,v in pairs(char:GetDescendants()) do
+		if v:IsA("BasePart") then
+			aah(v)
+		end
+	end
+	for i,v in pairs(char:GetDescendants()) do
+		if v:IsA("Decal") then
+			v.Transparency = 1
+		end
+	end
+	if getMagnitudeXZ(torso.Velocity) > 1 then
+		walkAnim = 1
+		--print("walking")
+	else
+		--print("not walking")
+		walkAnim = 0
+	end
+	if d == true then
+		flipright()
+	end
+	if a == true then
+		flipleft()
+	end
+	if walkAnim == 1 then
+		if cooldowna == false then
+			cooldowna = true
+			enable(walk1)
+			wait(0.1)
+			enable(walk2)
+			wait(0.1)
+			enable(walk3)
+			wait(0.1)
+			enable(walk4)
+			wait(0.1)
+			--enable(walk5)
+			--wait(0.1)
+			--enable(walk4)
+			--wait(0.1)
+			--enable(walk3)
+			--wait(0.1)
+			--enable(walk2)
+			--wait(0.1)
+			--enable(walk1)
+			--wait(0.1)
+			cooldowna = false
+		end
+	else
+		torso.idle.Enabled = true
+		for i,v in pairs(torso:GetDescendants()) do
+			if v.ClassName == "BillboardGui" then
+				if v.Name ~= "idle" then
+					v.Enabled = false
+				end
+			end
+		end
+	end
+end)
+
+coroutine.resume(coroutine.create(function()
+	player = game.Players.LocalPlayer
+	mouse = player:GetMouse()
+	char = player.Character
+	one = CFrame.new(1,0.5,-2) * CFrame.Angles(math.rad(105),0,math.rad(-45))--arm player
+	two = CFrame.new(0,-2.5,-6) * CFrame.Angles(math.rad(-90),math.rad(0),math.rad(0))-- body target
+	three = CFrame.new(1,0,0) * CFrame.Angles(math.rad(-25),math.rad(-25),math.rad(-25))-- player gun
+	four = CFrame.new(0,1,0.5) * CFrame.Angles(math.rad(70),0,0)-- HEAD + ARM RAISE
+	--five = CFrame.new(1,0,0) * CFrame.Angles(math.rad(-25),math.rad(-25),math.rad(-25))
+	five = CFrame.new(1.3,0.2,-0.5) * CFrame.Angles(math.rad(65),math.rad(0),math.rad(-15))-- target locked
+	six = CFrame.new(1.5,1,0) * CFrame.Angles(math.rad(-170),math.rad(0),math.rad(-15)) -- last invisible handshake is all it takes\
+	one1 = false
+	two2 = false
+	three3 = false
+	four4 = false
+	five5 = false
+	six6 = false
+	targret = nil
+	function GNOKILLMEGR(couchgag24)
+		for i,v in pairs(char:GetDescendants()) do
+			if v.ClassName == "Weld" then
+				if v.Part0 == couchgag24 then
+					v.Part0 = nil
+				elseif v.Part1 == couchgag24 then
+					v.Part1 = nil
+				end
+			end
+		end
+	end
+	function aaa()
+		coroutine.resume(coroutine.create(function()
+			local SurfaceLight0 = Instance.new("SurfaceLight")
+			SurfaceLight0.Parent = Part0
+			SurfaceLight0.Color = Color3.new(1, 1, 0)
+			SurfaceLight0.Face = Enum.NormalId.Top
+			SurfaceLight0.Brightness = 8	
+			wait(0.1)
+			SurfaceLight0:Destroy()
+		end))
+	end
+	killercooldown = false
+	function kill(target)
+		if killercooldown == false then
+			killercooldown = true
+			targret = target
+			G:Play()
+			one1 = true
+			wait(0.3)
+			two2 = true
+			one1 = false
+			three3 = true
+			wait(0.3)
+			three3 = false
+			four4 = true
+			five5 = true
+			six6 = true
+			wait(0.5)
+			two2 = false
+			headtargeta.Part0 = nil
+			headtargeta.Part1 = nil
+			armtargeta.Part0 = nil
+			armtargeta.Part1 = nil
+			targret.Torso.Anchored = false
+			five5 = false
+			targret = nil
+			for i,v in pairs(target:GetDescendants()) do
+				GNOKILLMEGR(v)
+			end
+			target.Humanoid.BreakJointsOnDeath = false
+			target.Head:remove()
+			wait()
+			if target:FindFirstChild("Head") then
+				target.Head.Parent = nil
+			end
+			Sound3:Play()
+			target.Archivable = true
+			a = target:Clone()
+			a.Parent = workspace
+			a.Torso.Anchored = true
+			target.Parent = nil
+			coroutine.resume(coroutine.create(function()
+				if game.Players:FindFirstChild(target.Name) then
+					wait(5)
+					game.Players:FindFirstChild(target.Name):LoadCharacter()
+				end	
+			end))
+			aaa()
+			--G:Stop()
+			wait(1)
+			one1 = false
+			two2 = false
+			three3 = false
+			four4 = false
+			five5 = false
+			six6 = false
+			targret = nil
+			killercooldown = false
+		end
+	end
+	mas = char
+	Part0 = Instance.new("Part")
+	local SpecialMesh1 = Instance.new("SpecialMesh")
+	local Sound2 = Instance.new("Sound")
+	Sound3 = Instance.new("Sound")
+	local Weld4 = Instance.new("Weld")
+	Part0.Name = "gun"
+	Part0.Parent = mas
+	Part0.CFrame = CFrame.new(-12.9899492, 4.14258814, 20.6473103, 0.707106769, -0.707106769, 0, 0.183012694, 0.183012694, 0.965925813, -0.683012664, -0.683012664, 0.258819044)
+	Part0.Orientation = Vector3.new(-75, 0, 45)
+	Part0.Position = Vector3.new(-12.9899492, 4.14258814, 20.6473103)
+	Part0.Rotation = Vector3.new(-75, 0, 45)
+	Part0.Color = Color3.new(0.388235, 0.372549, 0.384314)
+	Part0.Size = Vector3.new(0.200000003, 0.800000012, 0.800000012)
+	Part0.BackSurface = Enum.SurfaceType.Weld
+	Part0.BottomSurface = Enum.SurfaceType.Weld
+	Part0.BrickColor = BrickColor.new("Dark stone grey")
+	Part0.CanCollide = false
+	Part0.FrontSurface = Enum.SurfaceType.Weld
+	Part0.LeftSurface = Enum.SurfaceType.Weld
+	Part0.RightSurface = Enum.SurfaceType.Weld
+	Part0.TopSurface = Enum.SurfaceType.Weld
+	Part0.brickColor = BrickColor.new("Dark stone grey")
+	Part0.FormFactor = Enum.FormFactor.Custom
+	Part0.formFactor = Enum.FormFactor.Custom
+	Part0.Transparency = 1
+	SpecialMesh1.Parent = Part0
+	SpecialMesh1.MeshId = "http://www.roblox.com/asset/?id=72012879"
+	SpecialMesh1.Scale = Vector3.new(2, 2, 2)
+	SpecialMesh1.VertexColor = Vector3.new(2, 2, 2)
+	SpecialMesh1.TextureId = "http://www.roblox.com/asset/?id=72012859"
+	SpecialMesh1.MeshType = Enum.MeshType.FileMesh
+	Sound2.Name = "ReloadSound"
+	Sound2.Parent = Part0
+	Sound2.Pitch = 0.69999998807907
+	Sound2.PlaybackSpeed = 0.69999998807907
+	Sound2.SoundId = "http://www.roblox.com/asset/?id=31762599"
+	Sound2.Volume = 1
+	Sound3.Name = "FireSound"
+	Sound3.Parent = Part0
+	Sound3.Pitch = 1
+	Sound3.PlaybackSpeed = 1
+	Sound3.Volume = 10
+	Sound3.SoundId = "http://www.roblox.com/asset/?id=680140087"
+	Weld4.Name = "RightGrip"
+	Weld4.Parent = Part0
+	Weld4.C0 = CFrame.new(0, -1, 0, 1, 0, -0, 0, 0, 1, 0, -1, -0)
+	Weld4.C1 = CFrame.new(0, -0.400000006, -0.400000006, 1, 0, 0, 0, 0, -1, 0, 1, 0)
+	Weld4.Part0 = char["Right Arm"]
+	Weld4.Part1 = Part0
+	Weld4.part1 = Part0
+	armplayera = Instance.new("Weld",char)
+	headplayera = Instance.new("Weld",char)
+	armtargeta = Instance.new("Weld",char)
+	headtargeta = Instance.new("Weld",char)
+	grweld = Instance.new("Weld",char)
+	G = Instance.new("Sound",char.Head)
+	G.Volume = 10
+	G.SoundId = "rbxassetid://5706660149"
+	game:GetService("RunService").Stepped:Connect(function()
+		if two2 == true then
+			if targret ~= nil then
+				char.Torso.Anchored = true
+				--targret.Torso.Anchored = true
+				--grweld.C0 = char.Torso.CFrame:Inverse()
+				--grweld.C1 = targret.Torso.CFrame:Inverse()
+				grweld.Part0 = char.Torso
+				grweld.Part1 = targret.Torso
+				wait(0.1)
+				grweld.C0 = grweld.C0:Lerp(two,0.25)
+				--grweld.C1 = grweld.C1:Lerp(CFrame.new(0,0,0),0.25)
+			end	
+		else
+			grweld.Part0 = nil
+			grweld.Part1 = nil
+			grweld.C0 = CFrame.new(0,0,-2) * CFrame.Angles(0,math.rad(180),0)
+			--targret.Torso.Anchored = false
+			char.Torso.Anchored = false
+		end
+		if one1 == true then
+			if targret ~= nil then
+				armplayera.Part0 = char.Torso
+				armplayera.Part1 = char["Right Arm"]
+				--char.Torso.Anchored = true
+				armplayera.C0 = armplayera.C0:Lerp(one,0.25)
+			else
+				--armplayera.Part0 = nil
+				--armplayera.Part1 = nil
+				--armplayera.C0 = armplayera.C0:Lerp(CFrame.new(1.5,0,0),0.25)
+			end
+		end
+		if four4 == true then
+			if targret ~= nil then
+				headtargeta.Part0 = targret.Torso
+				headtargeta.Part1 = targret.Head
+				--char.Torso.Anchored = true
+				armtargeta.Part0 = targret.Torso
+				armtargeta.Part1 = targret["Right Arm"]
+				--char.Torso.Anchored = true
+				headtargeta.C0 = headtargeta.C0:Lerp(four,0.25)
+				armtargeta.C0 = armtargeta.C0:Lerp(six,0.25)
+				
+			else
+				armtargeta.C0 = armtargeta.C0:Lerp(CFrame.new(1.5,0,0),0.25)
+				armtargeta.C0 = armtargeta.C0:Lerp(CFrame.new(1.5,0,0),0.25)
+				--headtargeta.C0 = CFrame.new(0,1.5,0)
+				headtargeta.C0 = headtargeta.C0:Lerp(CFrame.new(0,1.5,0),0.25)
+				headtargeta.Part1 = nil
+			end
+		end
+		if five5 == true then
+			Part0.Transparency = 0
+			armplayera.Part0 = char.Torso
+			armplayera.Part1 = char["Right Arm"]
+			
+			armplayera.C0 = armplayera.C0:Lerp(five,0.25)
+		else
+			if one1 == false then
+				Part0.Transparency =1
+				char.Torso.Anchored = false
+				
+				armplayera.Part0 = nil
+				armplayera.Part1 = nil
+				grweld.Part0 = nil
+				grweld.Part1 = nil
+				--armplayera.C0 = armplayera.C0:Lerp(CFrame.new(1.5,0,0),0.25)
+			end
+		end
+	end)
+	head = char.Head
+	targetName = char.Name
+	coroutine.resume(coroutine.create(function()
+		billNameTag = Instance.new("BillboardGui", char)
+		billNameTag.Size = UDim2.new(1, 0, 1, 0)
+		billNameTag.Adornee = head
+		--billNameTag.PlayerToHideFrom = player
+		
+		textLabel = Instance.new("TextLabel", billNameTag)
+		textLabel.Font = "Arial"
+		textLabel.Size = UDim2.new(1, 0, 1, 0)
+		--textLabel.TextScaled = true
+		textLabel.TextSize = 100
+		textLabel.Text = targetName
+		textLabel.Size = UDim2.new(textLabel.TextBounds.X/100, 0, 0.75, 0)
+		textLabel.BorderSizePixel = 0
+		textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+		textLabel.TextColor3 = Color3.fromRGB(220,220,220)
+		textLabel.BackgroundTransparency = 1
+		textLabel.TextStrokeTransparency = 0
+		
+		
+		billNameTag.SizeOffset = Vector2.new(-textLabel.TextBounds.X/200 + 0.5, 0)
+		billNameTag.StudsOffset = Vector3.new(0, 1.5, 0)
+		textLabel.TextScaled = true
+	end))
+	char.Humanoid.WalkSpeed = 25
+	torso.Touched:Connect(function(part)
+		if part.Parent and part.Parent:FindFirstChild("Torso") and part.Parent:FindFirstChild("Head") then
+			kill(part.Parent)
+		end		
+	end)
+end))AMOGUS
