@@ -1,0 +1,160 @@
+--By Rufus14
+local players = game:GetService("Players")
+local runservice = game:GetService("RunService")
+local tool = script.Parent
+local player
+local character
+local hrp
+local hum
+local oldnetowner
+local exhaustiontime = 5
+local hpusegate = 100 --you can set it below 100 to make it only usable while injured
+local lastusetime = 0
+local dhspeed = 55
+local dhdecrement = 9
+local dhtime = 3
+local dhposepeed = 25
+local dhanimspeed = 20
+local raylength = 5
+
+local toolstate = "idle"
+
+local rightarmw
+local leftarmw
+local rightlegw
+local leftlegw
+local rootpartw
+local headw
+
+local animfunc
+local immunityfunc
+
+local currentwelds = {}
+local ppl = {}
+
+workspace.DescendantAdded:Connect(function(WHAT)
+	if WHAT:IsA("Humanoid") then
+		table.insert(ppl, WHAT.Parent)
+	end
+end)
+workspace.DescendantRemoving:Connect(function(WHAT)
+	if WHAT:IsA("Humanoid") then
+		local him = table.find(ppl, WHAT.Parent)
+		if him then
+			table.remove(ppl, him)
+		end
+	end
+end)
+
+for i,v in pairs(workspace:GetDescendants()) do
+	if v:IsA("Humanoid") then
+		table.insert(ppl, v.Parent)
+	end
+end
+
+function weldpart(part0, part1, c0, name)
+	local w = Instance.new("Weld", part1)
+	w.Part0 = part0
+	w.Part1 = part1
+	w.C0 = c0
+	w.Name = name
+	table.insert(currentwelds, w)
+	return w
+end
+
+tool.Equipped:Connect(function()
+	player = players:GetPlayerFromCharacter(tool.Parent)
+	oldnetowner = player
+	character = player.Character
+	hum = character:FindFirstChildOfClass("Humanoid")
+	hrp = character.HumanoidRootPart
+end)
+
+tool.Activated:Connect(function()
+	if tick() > lastusetime + exhaustiontime then
+		lastusetime = tick()
+		toolstate = "dh"
+		tool.Name = "[Charge]"
+		local currentfunctime = 0
+		local oldhp = hum.Health
+		hum.AutoRotate = false
+		local soundaaaahhh = script["Man Screaming"]:Clone()
+		soundaaaahhh.Parent = character.Torso
+		soundaaaahhh:Play()
+		game.Debris:AddItem(soundaaaahhh,3)
+		 local damagehitbox = script["Touch Damage Script"]:Clone()
+		 damagehitbox.Parent = character["Right Arm"]
+		 damagehitbox.Enabled = true
+		 game.Debris:AddItem(damagehitbox,3)
+		rightarmw = weldpart(character.Torso,character["Right Arm"], CFrame.new(1.5,0.5,0) * CFrame.Angles(math.pi/2,0,0) * CFrame.new(0,-0.5,0), "rightarmw")
+		leftarmw = weldpart(character.Torso,character["Left Arm"], CFrame.new(-1.5,0,0), "leftarmw")
+		rightlegw = weldpart(character.Torso,character["Right Leg"], CFrame.new(0.5,-2,0), "rightlegw")
+		leftlegw = weldpart(character.Torso,character["Left Leg"], CFrame.new(-0.5,-2,0), "leftlegw")
+		rootpartw = weldpart(character.HumanoidRootPart,character.Torso, CFrame.new(), "hrpw")
+		headw = weldpart(character.Torso,character.Head, CFrame.new(0,1.5,0), "headw")
+		local oldlook = hrp.CFrame
+		local currentspeed = dhspeed
+		local vel = Instance.new("BodyVelocity", hrp)
+		vel.MaxForce = Vector3.new(1/0,0,1/0)
+		vel.Velocity = oldlook.lookVector * currentspeed
+		local gyro = Instance.new("BodyGyro", hrp)
+		gyro.MaxTorque = Vector3.new(1/0,1/0,1/0)
+		gyro.CFrame = oldlook
+		gyro.P = 20000
+		immunityfunc = hum:GetPropertyChangedSignal("Health"):Connect(function()
+			if hum.Health < oldhp then
+				hum.Health = oldhp
+			end
+		end)
+		animfunc = runservice.Stepped:Connect(function(_, delta)
+			rightarmw.C0 = rightarmw.C0:lerp(CFrame.new(0.684235096, 1.33451939, -0.838968992, 2.04890966e-08, 0.939692557, 0.342020124, 0.766044497, -0.219846249, 0.604022503, 0.642787516, 0.262002647, -0.719846368), dhposepeed*delta)
+			leftarmw.C0 = leftarmw.C0:lerp(CFrame.new(-1.57399178, 0.127386093, 0.178021431, 0.98480773, 0.163175911, -0.059391126, -0.111618869, 0.856848776, 0.503340006, 0.133022174, -0.489063948, 0.862044871) * CFrame.new(0,0.5,0) * CFrame.Angles(-0.2,0,0) * CFrame.new(0,-0.5,0), dhposepeed*delta)
+			rightlegw.C0 = rightlegw.C0:lerp(CFrame.new(0,0,-math.cos(tick()*dhanimspeed)/1.75) * CFrame.new(0.476973057, -1.81023026, -0.566491127, 0.984807611, -0.0301537812, -0.171010569, -0.111619264, 0.64448297, -0.756427586, 0.133022547, 0.76402384, 0.63132596) * CFrame.new(0,0.75,0) * CFrame.Angles(-0.75+math.sin(tick()*dhanimspeed)*1.5,0,0) * CFrame.new(0,-1+math.cos(tick()*dhanimspeed)/3,-math.sin(tick()*dhanimspeed)/5), dhposepeed*delta)
+			leftlegw.C0 = leftlegw.C0:lerp(CFrame.new(0,0,math.cos(tick()*dhanimspeed)/1.75) * CFrame.new(-0.477442265, -1.70029163, -0.697512388, 0.984807789, -0.0301536527, -0.171009898, -0.111618802, 0.644483089, -0.756427407, 0.133022025, 0.764023662, 0.631326139) * CFrame.new(0,0.75,0) * CFrame.Angles(-0.75+-math.sin(tick()*dhanimspeed)*1.5,0,0) * CFrame.new(0,-1-math.cos(tick()*dhanimspeed)/3,math.sin(tick()*dhanimspeed)/5), dhposepeed*delta)
+			headw.C0 = headw.C0:lerp(CFrame.new(-0.0150771141, 1.38368225, 0.320251703, 0.98480767, -0.0301535707, -0.171010286, -0.0868242532, 0.767363608, -0.635306656, 0.15038383, 0.640502691, 0.753087461), dhposepeed*delta)
+			rootpartw.C0 = rootpartw.C0:lerp(CFrame.new(0,math.sin(tick()*dhanimspeed*2)/10,0) * CFrame.Angles(0,0,-math.sin(tick()*dhanimspeed)/10) * CFrame.new(0, -0.200000763, 0, 0.984807789, -0.13302207, 0.111618727, -7.88574039e-10, 0.642787457, 0.766044557, -0.17364797, -0.754406631, 0.63302207) * CFrame.Angles(0,0,-math.cos(tick()*dhanimspeed)/15), dhposepeed*delta)
+			local rayp = RaycastParams.new()
+			rayp.FilterDescendantsInstances = ppl
+			rayp.FilterType = Enum.RaycastFilterType.Blacklist
+			local ray = workspace:Raycast(hrp.Position, oldlook.lookVector*8, rayp)
+			if ray then
+				vel.Velocity = Vector3.new()
+			end
+		end)
+		task.spawn(function()
+			for i = 1,exhaustiontime do
+				tool.ToolTip = "Exhausted: "..exhaustiontime - i
+				task.wait(1)
+			end
+			--if hpusegate < 100 then
+				--tool.ToolTip = "Your health has to be below "..hpusegate.." in order to dodge"
+			--else
+			--	tool.ToolTip = "Click to dodge"
+			--end
+			tool.Name = "Charge"
+		end)
+		for i = 1,5 do
+			task.wait(dhtime/5)
+			currentspeed = currentspeed - dhdecrement
+			vel.Velocity = oldlook.lookVector * currentspeed
+		end
+		tool.Name = "-Charge-"
+		hum.AutoRotate = true
+		immunityfunc:Disconnect()
+		animfunc:Disconnect()
+		gyro:Destroy()
+		vel:Destroy()
+		for i,v in pairs(currentwelds) do
+			v:Destroy()
+		end
+		toolstate = "idle"
+	end
+end)
+
+
+--if hpusegate < 100 then
+	--tool.ToolTip = "Your health has to be below "..hpusegate.." in order to dodge"
+--else
+	--tool.ToolTip = "Click to dodge"
+--end
+tool.Name = "Charge"
