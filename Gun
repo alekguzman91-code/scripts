@@ -1,0 +1,1144 @@
+--By Rufus14, first attempt at making a real fps framework
+local players = game:GetService("Players")
+local runservice = game:GetService("RunService")
+local tweenservice = game:GetService("TweenService")
+local debris = game:GetService("Debris")
+local easingstyles = Enum.EasingStyle
+local easingdirs = Enum.EasingDirection
+
+local tool = script.Parent
+local remote = tool:WaitForChild("gunremote")
+local gunmodel = tool.GunModel
+local handle = gunmodel:FindFirstChild("Handle")
+local mainpart = gunmodel:FindFirstChild("mainpart")
+local owner
+local character
+
+local mathr = math.random
+
+local state = "unequipped"
+_G.gundebugserver = false
+
+--tick validators
+local equiptick
+
+--character limbs
+local larm
+local rarm
+local lleg
+local rleg
+local head
+local torso
+local hrp
+--character welds
+local larmw
+local rarmw
+local llegw
+local rlegw
+local headw
+local torsow
+--gun welds
+local boltw = mainpart:WaitForChild("boltweld")
+local magw = mainpart:WaitForChild("magweld")
+local trigw = mainpart:WaitForChild("triggerweld")
+local rightgrip
+--gun parts
+local lufa = gunmodel:WaitForChild("lufa")
+local boltmodel = gunmodel:WaitForChild("bolt")
+local magmodel = gunmodel:WaitForChild("mag")
+local boltpart = boltmodel:WaitForChild("boltpart")
+
+--vars
+local weldbholestoanchoredparts = false --when you repeatedly weld new stuff to lets say a base it will start bouncing people up
+local headrotationx = 0
+local adsing = false
+local sprinte = false
+local savedws
+local headoffset = Instance.new("Weld", handle)
+headoffset.Name = "headoffsetholder"
+headoffset.C0 = CFrame.new()
+local movehead = true
+local rayignore = {}
+
+--ignore table stuff
+
+workspace.DescendantAdded:Connect(function(WHAT)
+	if WHAT:IsA("Accessory") or WHAT:IsA("Hat") or WHAT.Name == "HumanoidRootPart" then
+		--print("added "..WHAT.Name)
+		table.insert(rayignore, WHAT)
+	elseif WHAT:IsA("BasePart") and not WHAT.CanCollide and not WHAT.Parent:FindFirstChildOfClass("Humanoid") then
+		--print("found nocollide")
+		table.insert(rayignore, WHAT)
+	end
+end)
+workspace.DescendantRemoving:Connect(function(WHAT)
+	local findthing = table.find(rayignore, WHAT)
+	if findthing then
+		--print("removed "..WHAT.Name)
+		table.remove(rayignore, findthing)
+	end
+end)
+
+for i,v in pairs(workspace:GetDescendants()) do
+	if v:IsA("Accessory") or v:IsA("Hat") or v.Name == "HumanoidRootPart" then
+		--print("added "..v.Name.." on start")
+		table.insert(rayignore, v)
+	elseif v:IsA("BasePart") and not v.CanCollide and not v.Parent:FindFirstChildOfClass("Humanoid") then
+		--print("found nocollide on start")
+		table.insert(rayignore, v)
+	end
+end
+
+--sounds
+soundsdisabledfromrefit = {""}
+local boltpsound = Instance.new("Sound", handle)
+boltpsound.SoundId = "rbxassetid://456267525"
+boltpsound.Volume = 0.8
+boltpsound.Name = "boltpsound"
+boltpsound.RollOffMinDistance = 1
+boltpsound.RollOffMaxDistance = 300
+local shellsound = Instance.new("Sound", handle)
+shellsound.SoundId = "rbxassetid://2712533735"
+shellsound.Volume = 0.5
+shellsound.Name = "shellsound"
+shellsound.RollOffMinDistance = 1
+shellsound.RollOffMaxDistance = 300
+local magoutsound = Instance.new("Sound", handle)
+magoutsound.SoundId = "rbxassetid://268445237"
+magoutsound.Volume = 0.8
+magoutsound.Name = "magoutsound"
+magoutsound.RollOffMinDistance = 1
+magoutsound.RollOffMaxDistance = 300
+local maginsound = Instance.new("Sound", handle)
+maginsound.SoundId = "rbxassetid://2546411966"
+maginsound.Volume = 0.8
+maginsound.Name = "magoutsound"
+maginsound.RollOffMinDistance = 1
+maginsound.RollOffMaxDistance = 300
+local magreachsound = Instance.new("Sound", handle)
+magreachsound.SoundId = "rbxassetid://7329457810"
+magreachsound.Volume = 3
+magreachsound.Name = "magreachsound"
+magreachsound.RollOffMinDistance = 1
+magreachsound.RollOffMaxDistance = 300
+local shootsound = Instance.new("Sound", handle)
+shootsound.SoundId = "rbxassetid://6530496628"
+shootsound.Volume = 1.5
+shootsound.Name = "shootsound"
+shootsound.RollOffMinDistance = 1
+shootsound.RollOffMaxDistance = 300
+concretesoundtick = tick()
+local hitconcrete = Instance.new("Sound", handle)
+hitconcrete.SoundId = "rbxassetid://6962153997"
+hitconcrete.Volume = 1
+hitconcrete.Name = "hitcsound"
+hitconcrete.RollOffMinDistance = 1
+hitconcrete.RollOffMaxDistance = 200
+hitcsounds = {"6962154328", "6962154691", "6962155378", "6962153997"}
+
+function playsound(sound, timep, playbacks, volume)
+	pcall(function() -- so the script wont die if someone renames sounds/attempts to play something that isnt a sound
+		sound.TimePosition = timep
+		sound.PlaybackSpeed = playbacks
+		sound.Volume = volume
+		sound:Play()
+	end)
+end
+
+--[[handle.ChildRemoved:Connect(function(WHAT) --antinosound
+	if WHAT.ClassName == "Sound" and not table.find(soundsdisabledfromrefit, WHAT.Name) then
+		local backups = Instance.new("Sound", handle)
+		backups.SoundId = WHAT.SoundId
+		backups.Volume = WHAT.Volume
+		backups.Name = WHAT.Name
+	end
+end)--]]
+
+--bullet data
+local settingsfolder = tool:WaitForChild("settings")
+local bchambered = settingsfolder:WaitForChild("bchambered")
+local binmag = settingsfolder:WaitForChild("inmag")
+local gunspeed = settingsfolder:WaitForChild("speed")
+local magleft = settingsfolder:WaitForChild("magleft")
+local bspeed = settingsfolder:WaitForChild("bspeed")
+local maxpen = settingsfolder:WaitForChild("maxwpenetration")
+local maxmagcap = settingsfolder:WaitForChild("maxmagcapacity")
+local bulletholetime = 10
+local shellflytime = 0.5
+local shellfallspeed = 80
+
+--ragdoll data
+ragdolldespawntime = 30
+
+
+--shot data
+local lasttimeshot = tick()
+
+ragdollbullettable = {}
+
+--damage values
+
+damagelimbs = {
+	["Left Arm"] = 85,
+	["Right Arm"] =85,
+	["Left Leg"] = 90,
+	["Right Leg"] = 90,
+	["Torso"] = 240,
+	["HumanoidRootPart"] = 240,
+	["UpperTorso"] = 240,
+	["LowerTorso"] = 240,
+	["Head"] = 240,
+}
+
+--pose tables
+poses = {
+	equip = {
+		[1] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.In},
+			hw = {CFrame.new(-0.0665130615, 0, -0.0558013916, 0.764023483, -0.133021921, 0.631326377, 0.0301536229, 0.984807849, 0.17100969, -0.644483387, -0.111618645, 0.756427288), easingstyles.Sine, easingdirs.In},
+			gw = {CFrame.new(-0.612442017, -0.0641784668, 0.243187428, -0.190242305, 0.981636524, -0.0140367029, 0.97735244, 0.188023433, -0.0971002579, -0.0926780254, -0.0321914665, -0.99517554), easingstyles.Sine, easingdirs.In},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516), easingstyles.Sine, easingdirs.In},
+			raw = {CFrame.new(0.981407166, -0.690696716, -1.01522064, 0.98480767, 0.173648074, 7.82310963e-08, 3.98025719e-08, 3.57627869e-07, -0.99999994, -0.173648164, 0.98480767, 3.27825546e-07), easingstyles.Sine, easingdirs.In},
+			law = {CFrame.new(-0.00226593018, -0.8416152, -2.39169312, -0.0137151666, -0.502738416, 0.864329815, 0.969466627, -0.218347415, -0.111618571, 0.244839087, 0.836407959, 0.490382791), easingstyles.Sine, easingdirs.In},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.In},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.In}
+		},
+		[2] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(0.0999984741, 0.104999542, 0.0449981689, 0.99999404, -1.41561031e-06, -1.00024045e-06, -1.41561031e-06, 0.999997914, -2.98023224e-08, -1.00024045e-06, -2.98023224e-08, 0.999999702), easingstyles.Linear, easingdirs.InOut},
+			hw = {CFrame.new(-0.0665130615, 0, -0.0558013916, 0.764023662, -0.133021936, 0.631326437, 0.0301536229, 0.984807849, 0.17100969, -0.644483507, -0.111618653, 0.756427407), easingstyles.Linear, easingdirs.InOut},
+			gw = {CFrame.new(-0.672363281, -0.433959961, 0.294300914, -0.216361552, 0.971516311, -0.0966561288, 0.963123441, 0.196173027, -0.184126943, -0.159921542, -0.132930249, -0.97813797), easingstyles.Linear, easingdirs.InOut},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516), easingstyles.Linear, easingdirs.InOut},
+			raw = {CFrame.new(1.03038406, -0.790250301, -0.73740387, 0.98480773, 0.172303915, -0.0215636268, 4.28408384e-08, -0.124180116, -0.992259502, -0.173648149, 0.977184474, -0.122293577), easingstyles.Linear, easingdirs.InOut},
+			law = {CFrame.new(-0.00227355957, -0.841616631, -2.39168549, -0.0574795455, -0.499630094, 0.864329934, 0.946747363, -0.302011132, -0.111618534, 0.316805094, 0.811885834, 0.490382493), easingstyles.Linear, easingdirs.InOut},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Linear, easingdirs.InOut},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Linear, easingdirs.InOut}
+		},
+		[3] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Back, easingdirs.Out},
+			hw = {CFrame.new(0, 0, 0, 0.642787635, 0, 0.766044438, 0, 1, 0, -0.766044438, 0, 0.642787635), easingstyles.Sine, easingdirs.Out},
+			gw = {CFrame.new(-0.209030151, -1.02510452, -0.225169182, 9.54675698e-08, 0.99999994, 8.86497986e-10, 0.939692557, -1.49011612e-07, -0.342020124, -0.342020124, 3.348487e-08, -0.939692557), easingstyles.Sine, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516), easingstyles.Sine, easingdirs.Out},
+			raw = {CFrame.new(1.14278793, -1, 0.0660438538, 0.99999994, -2.98023295e-08, 3.34848664e-08, 3.34848629e-08, -2.80971388e-08, -0.99999994, -2.98023153e-08, 0.99999994, -2.80971388e-08), easingstyles.Sine, easingdirs.Out},
+			law = {CFrame.new(0.458522797, -1.14453077, -2.31480408, -0.166365653, -0.620885015, 0.766044557, 0.965925753, -0.258819014, 5.69202712e-08, 0.198266879, 0.739942193, 0.642787457), easingstyles.Sine, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.Out}
+		}
+	},
+	shoot = {
+		[1] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(0.0999984741, 0.104999542, 0.0449981689, 0.99999404, -1.41561031e-06, -1.00024045e-06, -1.41561031e-06, 0.999997914, -2.98023224e-08, -1.00024045e-06, -2.98023224e-08, 0.999999702), easingstyles.Back, easingdirs.Out},
+			hw = {CFrame.new(0, 0, 0, 0.642787635, 0, 0.766044438, 0, 1, 0, -0.766044438, 0, 0.642787635), easingstyles.Back, easingdirs.Out},
+			gw = {CFrame.new(-0.209030151, -1.02510452, -0.225169182, 9.54675698e-08, 0.99999994, 8.86497986e-10, 0.939692557, -1.49011612e-07, -0.342020124, -0.342020124, 3.348487e-08, -0.939692557), easingstyles.Back, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516) * CFrame.Angles(0,-math.rad(2.5),0), easingstyles.Back, easingdirs.Out},
+			raw = {CFrame.new(1.14278793, -1, 0.0660438538, 0.99999994, -2.98023295e-08, 3.34848664e-08, 3.34848629e-08, -2.80971388e-08, -0.99999994, -2.98023153e-08, 0.99999994, -2.80971388e-08) * CFrame.new(0,0.1,0) * CFrame.Angles(0,0,-math.rad(2.5)), easingstyles.Back, easingdirs.Out},
+			law = {CFrame.new(0.458522797, -1.14453077, -2.31480408, -0.166365653, -0.620885015, 0.766044557, 0.965925753, -0.258819014, 5.69202712e-08, 0.198266879, 0.739942193, 0.642787457) * CFrame.new(0.05,0.1,0.05), easingstyles.Back, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Back, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Back, easingdirs.Out},
+		},
+		[2] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Back, easingdirs.Out},
+			hw = {CFrame.new(0, 0, 0, 0.642787635, 0, 0.766044438, 0, 1, 0, -0.766044438, 0, 0.642787635), easingstyles.Back, easingdirs.Out},
+			gw = {CFrame.new(-0.209030151, -1.02510452, -0.225169182, 9.54675698e-08, 0.99999994, 8.86497986e-10, 0.939692557, -1.49011612e-07, -0.342020124, -0.342020124, 3.348487e-08, -0.939692557), easingstyles.Back, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516), easingstyles.Back, easingdirs.Out},
+			raw = {CFrame.new(1.14278793, -1, 0.0660438538, 0.99999994, -2.98023295e-08, 3.34848664e-08, 3.34848629e-08, -2.80971388e-08, -0.99999994, -2.98023153e-08, 0.99999994, -2.80971388e-08), easingstyles.Back, easingdirs.Out},
+			law = {CFrame.new(0.458522797, -1.14453077, -2.31480408, -0.166365653, -0.620885015, 0.766044557, 0.965925753, -0.258819014, 5.69202712e-08, 0.198266879, 0.739942193, 0.642787457), easingstyles.Back, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Back, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Back, easingdirs.Out},
+		}
+	},
+	reload = {
+		[1] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.InOut},
+			hw = {CFrame.new(-0.055809021, 0, -0.0665130615, 0.766044319, -0.11161875, 0.633022487, -3.7252903e-08, 0.984807789, 0.17364797, -0.642787755, -0.133022055, 0.754406393), easingstyles.Sine, easingdirs.InOut},
+			gw = {CFrame.new(-0.0572328568, -0.980491638, -0.278923035, 0.0310192183, 0.998318493, 0.0487680063, 0.937351048, -0.0121154999, -0.34816578, -0.346991748, 0.0565129519, -0.936161935), easingstyles.Sine, easingdirs.InOut},
+			tw = {CFrame.new(0, 0, 0, 0.766044319, 0, -0.642787755, 0, 1, 0, 0.642787755, 0, 0.766044319), easingstyles.Sine, easingdirs.InOut},
+			raw = {CFrame.new(1.26604462, -0.913009644, -0.537094116, 0.999999821, -3.57627869e-07, 6.27093755e-08, 4.48221016e-10, -0.173648104, -0.984807611, 3.85997794e-07, 0.984807551, -0.173648149), easingstyles.Sine, easingdirs.InOut},
+			law = {CFrame.new(-1.08869362, -1.33496189, -1.19934082, 0.766044259, 4.22527791e-10, -0.642787695, -0.111618742, 0.98480767, -0.133021995, 0.633022428, 0.17364791, 0.754406333), easingstyles.Sine, easingdirs.InOut},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.InOut},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.InOut}
+		},
+		[2] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.In},
+			hw = {CFrame.new(-0.055809021, 0, -0.0665130615, 0.864329457, -0.11161875, 0.490383387, 0.03015358, 0.984807789, 0.171009868, -0.502021194, -0.133022055, 0.854564071), easingstyles.Sine, easingdirs.In},
+			gw = {CFrame.new(-0.0572328568, -0.980491638, -0.278923035, 0.0310192183, 0.998318493, 0.0487680063, 0.937351048, -0.0121154999, -0.34816578, -0.346991748, 0.0565129519, -0.936161935), easingstyles.Sine, easingdirs.In},
+			tw = {CFrame.new(0, 0, 0, 0.766044319, 0, -0.642787755, 0, 1, 0, 0.642787755, 0, 0.766044319), easingstyles.Sine, easingdirs.In},
+			raw = {CFrame.new(1.11267471, -0.963647842, -0.780944824, 0.96286577, 0.230811596, -0.140053496, -0.10095071, -0.173324212, -0.979677141, -0.250395477, 0.957436204, -0.143587425), easingstyles.Sine, easingdirs.In},
+			law = {CFrame.new(-0.289166451, -0.800122261, -1.59056854, 0.533511698, -0.820919991, -0.203605846, -0.0797704309, 0.190816656, -0.978378952, 0.842022419, 0.53821826, 0.0363177806), easingstyles.Sine, easingdirs.In},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.In},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.In}
+		},
+		[3] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.Out},
+			hw = {CFrame.new(-0.055809021, 0, -0.0665130615, 0.936352491, -0.11161875, 0.332844049, 0.0593910292, 0.984807789, 0.163175717, -0.34600088, -0.133022055, 0.928756297), easingstyles.Sine, easingdirs.Out},
+			gw = {CFrame.new(-0.0572328568, -0.980491638, -0.278923035, 0.0310192183, 0.998318493, 0.0487680063, 0.937351048, -0.0121154999, -0.34816578, -0.346991748, 0.0565129519, -0.936161935), easingstyles.Sine, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.766044319, 0, -0.642787755, 0, 1, 0, 0.642787755, 0, 0.766044319), easingstyles.Sine, easingdirs.Out},
+			raw = {CFrame.new(0.951341629, -1.00614738, -0.96661377, 0.887119889, 0.393562078, -0.241094485, -0.185951054, -0.173324212, -0.967150807, -0.422421396, 0.902810454, -0.0805761442), easingstyles.Sine, easingdirs.Out},
+			law = {CFrame.new(-0.798740387, -0.729963303, -1.94239807, 0.788041711, -0.601489127, -0.131151706, -0.0967602059, 0.0893746093, -0.991286814, 0.60796994, 0.793865442, 0.0122306943), easingstyles.Sine, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.Out}
+		},
+		[4] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.In},
+			hw = {CFrame.new(-0.055809021, 0, -0.0665130615, 0.936352491, -0.11161875, 0.332844049, 0.0593910292, 0.984807789, 0.163175717, -0.34600088, -0.133022055, 0.928756297), easingstyles.Sine, easingdirs.In},
+			gw = {CFrame.new(-0.0572328568, -0.980491638, -0.278923035, 0.0310192183, 0.998318493, 0.0487680063, 0.937351048, -0.0121154999, -0.34816578, -0.346991748, 0.0565129519, -0.936161935), easingstyles.Sine, easingdirs.In},
+			tw = {CFrame.new(0, 0, 0, 0.766044319, 0, -0.642787755, 0, 1, 0, 0.642787755, 0, 0.766044319	), easingstyles.Sine, easingdirs.In},
+			raw = {CFrame.new(0.951341629, -1.00614738, -0.96661377, 0.887119889, 0.393562078, -0.241094485, -0.185951054, -0.173324212, -0.967150807, -0.422421396, 0.902810454, -0.0805761442), easingstyles.Sine, easingdirs.In},
+			law = {CFrame.new(-0.733897209, -0.698638916, -1.94715118, 0.733374, -0.676505506, -0.0670995787, -0.0810378194, 0.0110032074, -0.996650279, 0.67497766, 0.736355007, -0.0467530787) * CFrame.Angles(0.15,0,0), easingstyles.Sine, easingdirs.In},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.In},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.In}
+		},
+		[5] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Sine, easingdirs.In},
+			hw = {CFrame.new(-0.055809021, 0, -0.0665130615, 0.936352491, -0.11161875, 0.332844049, 0.0593910292, 0.984807789, 0.163175717, -0.34600088, -0.133022055, 0.928756297), easingstyles.Sine, easingdirs.In},
+			gw = {CFrame.new(-0.0572328568, -0.980491638, -0.278923035, 0.0310192183, 0.998318493, 0.0487680063, 0.937351048, -0.0121154999, -0.34816578, -0.346991748, 0.0565129519, -0.936161935), easingstyles.Sine, easingdirs.In},
+			tw = {CFrame.new(0, 0, 0, 0.766044319, 0, -0.642787755, 0, 1, 0, 0.642787755, 0, 0.766044319), easingstyles.Sine, easingdirs.In},
+			raw = {CFrame.new(0.956790924, -0.985137939, -0.964424133, 0.887119889, 0.382671088, -0.258031964, -0.185951054, -0.215345785, -0.95867002, -0.422421396, 0.898436666, -0.119879492), easingstyles.Sine, easingdirs.In},
+			law = {CFrame.new(-0.702912331, -0.529985428, -1.91860962, 0.691018224, -0.696123064, -0.194694132, -0.3362284, -0.0711144507, -0.939091682, 0.639877796, 0.714391232, -0.28319779), easingstyles.Sine, easingdirs.In},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.In},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.In}
+		}
+	},
+	--individual poses
+	reloadmag = {
+		[1] = {
+			mag = {CFrame.new(0.383216858, 0.00605773926, -0.895876884, 0.982579589, -0.0196594987, -0.184799746, 0.0194191728, 0.999806643, -0.00311047747, 0.184825167, -0.000532366452, 0.982771337), easingstyles.Sine, easingdirs.In}
+		},
+		[2] = {
+			mag = {CFrame.new(-0.341659546, -0.00597381592, -0.82459569, 0.943051159, -0.0805884004, 0.32273832, 0.108094886, 0.99179846, -0.0682025552, -0.314594954, 0.0992048606, 0.944027781) * CFrame.new(-0.2,0,0), easingstyles.Sine, easingdirs.Out}
+		},
+		[3] = {
+			mag = {CFrame.new(-0.343078613, 0.033826828, -0.555139065, 0.931312561, -0.056615673, 0.359807789, 0.0651112646, 0.997804642, -0.0115158707, -0.358372539, 0.0341522247, 0.932950974) * CFrame.Angles(0,0.3,0) * CFrame.new(-0.2,0,0), easingstyles.Sine, easingdirs.In}
+		},
+		[4] = {
+			mag = {CFrame.new(-0.226425171, 0.0250015259, -0.604773998, 0.984800279, 1.56462193e-06, 0.173645124, 1.68196857e-06, 0.999979436, -5.66244125e-07, -0.173649177, -8.04662704e-07, 0.984803438), easingstyles.Sine, easingdirs.Out}
+		}
+	},
+	ads = {
+		[1] = {
+			bw = {CFrame.new(-0.299999237, 0.104995728, 0.0449981689, 1, 3.33557523e-06, 2.00149793e-06, -3.33557591e-06, 1, 3.57635798e-07, -2.0014968e-06, -3.57642477e-07, 1), easingstyles.Back, easingdirs.Out},
+			hw = {CFrame.new(0, 0, 0, 0.642787635, 0, 0.766044438, 0, 1, 0, -0.766044438, 0, 0.642787635), easingstyles.Sine, easingdirs.Out},
+			gw = {CFrame.new(-0.209030151, -1.02510452, -0.225169182, 9.54675698e-08, 0.99999994, 8.86497986e-10, 0.939692557, -1.49011612e-07, -0.342020124, -0.342020124, 3.348487e-08, -0.939692557), easingstyles.Sine, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516), easingstyles.Sine, easingdirs.Out},
+			raw = {CFrame.new(-0.35,0,0) * CFrame.new(1.14278793, -1, 0.0660438538, 0.99999994, -2.98023295e-08, 3.34848664e-08, 3.34848629e-08, -2.80971388e-08, -0.99999994, -2.98023153e-08, 0.99999994, -2.80971388e-08), easingstyles.Sine, easingdirs.Out},
+			law = {CFrame.new(-0.35,0,0) * CFrame.new(0.458522797, -1.14453077, -2.31480408, -0.166365653, -0.620885015, 0.766044557, 0.965925753, -0.258819014, 5.69202712e-08, 0.198266879, 0.739942193, 0.642787457), easingstyles.Sine, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Sine, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Sine, easingdirs.Out}
+		},
+		[2] = {
+			--mw = {CFrame.new(-0.2264328, 0.0250015259, -0.604776859, 0.98480773, 0, 0.173648193, 0, 1, 0, -0.173648193, 0, 0.98480773), easingstyles.Sine, easingdirs.In},
+			bw = {CFrame.new(0.0999984741, 0.104999542, 0.0449981689, 0.99999404, -1.41561031e-06, -1.00024045e-06, -1.41561031e-06, 0.999997914, -2.98023224e-08, -1.00024045e-06, -2.98023224e-08, 0.999999702), easingstyles.Back, easingdirs.Out},
+			hw = {CFrame.new(0, 0, 0, 0.642787635, 0, 0.766044438, 0, 1, 0, -0.766044438, 0, 0.642787635), easingstyles.Back, easingdirs.Out},
+			gw = {CFrame.new(-0.209030151, -1.02510452, -0.225169182, 9.54675698e-08, 0.99999994, 8.86497986e-10, 0.939692557, -1.49011612e-07, -0.342020124, -0.342020124, 3.348487e-08, -0.939692557), easingstyles.Back, easingdirs.Out},
+			tw = {CFrame.new(0, 0, 0, 0.642787516, 0, -0.766044497, 0, 1, 0, 0.766044497, 0, 0.642787516) * CFrame.Angles(0,-math.rad(2.5),0), easingstyles.Back, easingdirs.Out},
+			raw = {CFrame.new(-0.35,0,0) * CFrame.new(1.14278793, -1, 0.0660438538, 0.99999994, -2.98023295e-08, 3.34848664e-08, 3.34848629e-08, -2.80971388e-08, -0.99999994, -2.98023153e-08, 0.99999994, -2.80971388e-08) * CFrame.new(0,0.1,0) * CFrame.Angles(0,0,-math.rad(2.5)), easingstyles.Back, easingdirs.Out},
+			law = {CFrame.new(-0.35,0,0) * CFrame.new(0.458522797, -1.14453077, -2.31480408, -0.166365653, -0.620885015, 0.766044557, 0.965925753, -0.258819014, 5.69202712e-08, 0.198266879, 0.739942193, 0.642787457) * CFrame.new(0.05,0.1,0.05), easingstyles.Back, easingdirs.Out},
+			llw = {CFrame.new(-0.5,-2,0), easingstyles.Back, easingdirs.Out},
+			rlw = {CFrame.new(0.5,-2,0), easingstyles.Back, easingdirs.Out},
+		}
+	}
+}
+
+function weld(part0, part1, name, c0)
+	local welfunc
+	pcall(function()
+		welfunc = Instance.new("Weld", part0)
+		welfunc.Part0 = part0
+		welfunc.Part1 = part1
+		welfunc.Name = name
+		welfunc.C0 = c0
+	end)
+	return welfunc
+end
+
+function tween(speed, easingstyle, easingdirection, loopcount, reverseafterfinish, delaytime, WHAT, goal)
+	local info = TweenInfo.new(speed, easingstyle, easingdirection, loopcount, reverseafterfinish, delaytime)
+	local goals = goal
+	local anim = tweenservice:Create(WHAT, info, goals)
+	anim:Play()
+end
+
+function cpose(posename, clientpose, clientposenum, speed, backupt)
+	if equiptick == backupt then
+		tween(speed, posename.raw[2], posename.raw[3], 0, false, 0, rarmw, {C0 = posename.raw[1]})
+		tween(speed, posename.law[2], posename.law[3], 0, false, 0, larmw, {C0 = posename.law[1]})
+		tween(speed, posename.gw[2], posename.gw[3], 0, false, 0, rightgrip, {C0 = posename.gw[1]})
+		tween(speed, posename.tw[2], posename.tw[3], 0, false, 0, torsow, {C0 = posename.tw[1]})
+		tween(speed, posename.hw[2], posename.hw[3], 0, false, 0, headoffset, {C0 = posename.hw[1]})
+		tween(speed, posename.bw[2], posename.bw[3], 0, false, 0, boltw, {C0 = posename.bw[1]})
+		remote:FireClient(owner, "fromserverpose", clientpose, clientposenum, speed)
+	end
+	--tween(speed, easingstylee, easingdirss, 0, false, 0, llegw, {C0 = currentpose.llw})
+	--tween(speed, easingstylee, easingdirss, 0, false, 0, rlegw, {C0 = currentpose.rlw})
+end
+function cindividualpose(posename, weld, clientpose, clientposenum, clientposedir, speed, backupt)
+	if equiptick == backupt then
+		tween(speed, posename[2], posename[3], 0, false, 0, weld, {C0 = posename[1]})
+		remote:FireClient(owner, "fromserverindividualpose", clientpose, clientposenum, clientposedir, speed)
+	end
+end
+
+function push(fromWHAT, WHAT, force, debriss)
+	if WHAT:FindFirstChild("pushedgunv") then WHAT.pushedgunv:Destroy() end
+	local v = Instance.new("BodyVelocity", WHAT)
+	v.Name = "pushedgunv"
+	v.MaxForce = Vector3.new(1/0,0,1/0)
+	v.Velocity = (WHAT.Position - fromWHAT).unit*force
+	debris:AddItem(v, debriss)
+end
+
+function pemit(part, color, minsize, maxsize, minlift, maxlift, speed, direction, lifetime)
+	pcall(function() --tusk has a particle emitter limit thats why im pcalling
+		local em = Instance.new("ParticleEmitter", part)
+		em.Color = ColorSequence.new(color)
+		em.Texture = "rbxassetid://375847957"
+		em.Name = "gemit"
+		em.Drag = 10
+		em.EmissionDirection = direction
+		em.Speed = NumberRange.new(speed)
+		em.Rate = 500
+		em.Lifetime = NumberRange.new(minlift,maxlift)
+		em.SpreadAngle = Vector2.new(-20,20)
+		em.Transparency = NumberSequence.new(0.75, 1)
+		em.Size = NumberSequence.new(minsize, maxsize)
+		task.spawn(function()
+			task.wait(lifetime)
+			em.Enabled = false
+			debris:AddItem(em, 0.5)
+		end)
+	end)
+end
+
+function muzzleflash(size, transparency)
+	local e = Instance.new("SpawnLocation", gunmodel) --spawnlocation because its one of the only baseparts that dont go under tusks basepart limit
+	table.insert(rayignore, e)
+	e.Enabled = false
+	Instance.new("SpecialMesh", e).MeshType = Enum.MeshType.Sphere
+	local lig = Instance.new("PointLight", e)
+	lig.Brightness = 1-transparency
+	lig.Name = "mflash"
+	e.Size = size
+	e.Name = "muzzleflash"
+	e.Transparency = transparency
+	e.CanCollide = false
+	e.Anchored = true
+	e.Material = Enum.Material.Neon
+	e.CFrame = lufa.CFrame * CFrame.new((-size.x/2)-0.3,0,0)
+	pemit(lufa, Color3.fromRGB(255,255,255), 0.15, 0.35, 0.1, 0.2, 10, "Left", 0.1)
+	debris:AddItem(e, 0.025)
+end
+
+function makeballconnections(limb, attachementone, attachmenttwo, twistlower, twistupper, du)
+	local connection = Instance.new('BallSocketConstraint', limb)
+	local bone = Instance.new("Part", limb)
+	connection.LimitsEnabled = true
+	connection.Attachment0 = attachementone
+	connection.Attachment1 = attachmenttwo
+	connection.TwistLimitsEnabled = true
+	connection.TwistLowerAngle = twistlower
+	connection.TwistUpperAngle = twistupper
+	bone:BreakJoints()
+	local bonew = Instance.new("Weld", bone)
+	bonew.Part0 = limb
+	bonew.Part1 = bone
+	bonew.C0 = CFrame.fromEulerAnglesXYZ(0,0,math.pi/2) * CFrame.new(-limb.Size.y/4.5,0,0)
+	if limb.Parent:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+		bone.Size = Vector3.new(limb.Size.y/1.8,limb.Size.z,limb.Size.x)
+	else
+		bone.Size = Vector3.new(limb.Size.y/3,limb.Size.z,limb.Size.x)
+	end
+	bone.Transparency = 1
+	bone.Shape = "Cylinder"
+	local noc = Instance.new("NoCollisionConstraint", bone)
+	noc.Part0 = attachementone.Parent
+	noc.Part1 = attachmenttwo.Parent
+	debris:AddItem(bone, du)
+	debris:AddItem(connection, du)
+end
+function makehingeconnections(limb, attachementone, attachmenttwo, lower, upper, du)
+	local connection = Instance.new('HingeConstraint', limb)
+	local bone = Instance.new("Part", limb)
+	connection.LimitsEnabled = true
+	connection.Attachment0 = attachementone
+	connection.Attachment1 = attachmenttwo
+	connection.LimitsEnabled = true
+	connection.LowerAngle = lower
+	connection.UpperAngle = upper
+	bone:BreakJoints()
+	local bonew = Instance.new("Weld", bone)
+	bonew.Part0 = limb
+	bonew.Part1 = bone
+	bonew.C0 = CFrame.fromEulerAnglesXYZ(0,0,math.pi/2) * CFrame.new(-limb.Size.y/4.5,0,0)
+	if limb.Parent:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+		bone.Size = Vector3.new(limb.Size.y/1.8,limb.Size.z,limb.Size.x)
+	elseif limb.Parent:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R15 then
+		bone.Size = Vector3.new(limb.Size.y/3,limb.Size.z,limb.Size.x)
+	elseif limb.Name == "Head" then
+		bone.Size = Vector3.new(limb.Size.y/5,limb.Size.z,limb.Size.x)
+	end
+	bone.Transparency = 1
+	bone.Shape = "Cylinder"
+	local noc = Instance.new("NoCollisionConstraint", bone)
+	noc.Part0 = attachementone.Parent
+	noc.Part1 = attachmenttwo.Parent
+	debris:AddItem(bone, du)
+	debris:AddItem(connection, du)
+end
+function makeragdolllimbr6(limb, dudetorso, at1pos, at2pos, lowt, upt, duratio)
+	local at1 = Instance.new("Attachment", dudetorso)
+	local at2 = Instance.new("Attachment", limb)
+	at1.Position = at1pos
+	at2.Position = at2pos
+	makeballconnections(limb, at1, at2, lowt, upt, duratio)
+	debris:AddItem(at1, duratio)
+	debris:AddItem(at2, duratio)
+end
+
+function ragdollify(pushpart, ch, duration, dea)
+	local chum = ch:FindFirstChildOfClass("Humanoid")
+	if chum then
+		if not chum.PlatformStand then
+			chum.PlatformStand = true
+			if dea then
+				for i,v in pairs(ch:GetDescendants()) do
+					if v:IsA("Motor6D") then
+						v:Destroy()
+					end
+				end
+				for i,v in pairs(ragdollbullettable) do
+					local clweld = Instance.new("Weld", v[1])
+					clweld.Part0 = v[1]
+					clweld.Part1 = v[2]
+					clweld.C0 = v[3]
+				end
+				for i,v in pairs(ragdollbullettable) do
+					ragdollbullettable[i] = nil
+				end
+				local hpsc = ch:FindFirstChild("Health")
+				if hpsc then
+					if hpsc:IsA("Script") then
+						hpsc.Disabled = true
+					end
+				end
+				if ch:FindFirstChild("HumanoidRootPart") then
+					ch:FindFirstChild("HumanoidRootPart"):Destroy()
+				end
+				push(pushpart, ch.Head, 10, 0.3)
+				debris:AddItem(ch, ragdolldespawntime)
+			elseif ch:FindFirstChild("HumanoidRootPart") then
+				if ch:FindFirstChild("HumanoidRootPart").CanCollide then
+					ch:FindFirstChild("HumanoidRootPart").CanCollide = false
+					coroutine.wrap(function()
+						task.wait(duration)
+						if ch:FindFirstChild("HumanoidRootPart") then
+							ch:FindFirstChild("HumanoidRootPart").CanCollide = true
+						end
+					end)()
+				end
+			end
+			local savedglue = {}
+			local mainpart
+			if chum.RigType == Enum.HumanoidRigType.R6 then
+				local chtor = ch.Torso
+				mainpart = chtor
+				if not dea then
+					for i,v in pairs(chtor:GetChildren()) do
+						if v:IsA("Motor6D") then
+							if v.Part0 ~= nil and v.Part1 ~= nil and v.Part1.Name ~= "Head" and v.Part0.Name ~= "HumanoidRootPart" then
+								table.insert(savedglue, {v, v.Part0, v.Part1})
+								v.Part1 = nil
+								v.Part0 = nil
+							end
+						end
+					end
+				end
+				pcall(function()
+					makeragdolllimbr6(ch["Right Arm"], ch.Torso, Vector3.new((ch.Torso.Size.x/2) + (ch.Torso.Size.x/4), (ch.Torso.Size.y/4), 0), Vector3.new(0,ch["Right Arm"].Size.y/4,0), -180, 180, duration)
+				end)
+				pcall(function()
+					makeragdolllimbr6(ch["Left Arm"], ch.Torso, Vector3.new(-(ch.Torso.Size.x/2) - (ch.Torso.Size.x/4), (ch.Torso.Size.y/4), 0), Vector3.new(0,ch["Left Arm"].Size.y/4,0), -180, 180, duration)
+				end)
+				pcall(function()
+					makeragdolllimbr6(ch["Left Leg"], ch.Torso, Vector3.new(-(ch.Torso.Size.x/4), -(ch.Torso.Size.y/2), 0), Vector3.new(0,ch["Left Leg"].Size.y/2,0), -80, 80, duration)
+				end)
+				pcall(function()
+					makeragdolllimbr6(ch["Right Leg"], ch.Torso, Vector3.new((ch.Torso.Size.x/4), -(ch.Torso.Size.y/2), 0), Vector3.new(0,ch["Right Leg"].Size.y/2,0), -80, 80, duration)
+				end)
+				if dea == true and not ch:FindFirstChild("diedbydecapitation") then
+					if ch.Torso:findFirstChild("NeckAttachment") then
+						local headattachment = Instance.new("Attachment", ch.Head)
+						headattachment.Position = Vector3.new(0,-ch.Head.Size.y/2,0)
+						makehingeconnections(ch.Head, headattachment, ch.Torso.NeckAttachment, -50, 50, ragdolldespawntime)
+					else
+						local wed = Instance.new("Weld", ch.Head)
+						wed.Part1 = ch.Head
+						wed.Part0 = ch.Torso
+						wed.C0 = CFrame.new(0,(ch.Torso.Size.y/2)+(ch.Head.Size.y/2),0)
+					end
+				end
+				if not dea then
+					coroutine.wrap(function()
+						task.wait(duration)
+						for i,v in pairs(savedglue) do
+							v[1].Part0 = v[2]
+							v[1].Part1 = v[3]
+							savedglue[i] = nil
+						end
+						chum.PlatformStand = false
+					end)()
+				end
+			elseif chum.RigType == Enum.HumanoidRigType.R15 then
+				local chuppertor = ch.UpperTorso
+				mainpart = chuppertor
+				if not dea then
+					for i,v in pairs(ch:GetDescendants()) do
+						if v:IsA("Motor6D") then
+							if v.Part0 ~= nil and v.Part1 ~= nil and v.Part1.Name ~= "Head" and v.Part0.Name ~= "HumanoidRootPart" then
+								table.insert(savedglue, {v, v.Part0, v.Part1})
+								v.Part1 = nil
+								v.Part0 = nil
+							end
+						end
+					end
+				end
+				if dea == true and not ch:FindFirstChild("diedbydecapitation") then
+					if ch.UpperTorso:findFirstChild("NeckAttachment") then
+						local HeadAttachment = Instance.new("Attachment", ch.Head)
+						HeadAttachment.Position = Vector3.new(0, -0.5, 0)
+						makehingeconnections(ch.Head, HeadAttachment, ch.UpperTorso.NeckAttachment, -50, 50, ragdolldespawntime)
+					else
+						local wed = Instance.new("Weld", ch.Head)
+						wed.Part1 = ch.Head
+						wed.Part0 = ch.UpperTorso
+						wed.C0 = CFrame.new(0,(ch.UpperTorso.Size.y/2)+(ch.Head.Size.y/2),0)
+					end
+				end
+				pcall(function()
+					makehingeconnections(ch.LowerTorso, ch.LowerTorso.WaistRigAttachment, ch.UpperTorso.WaistRigAttachment, -50, 50, duration)
+					makeballconnections(ch.LeftUpperArm, ch.LeftUpperArm.LeftShoulderRigAttachment, ch.UpperTorso.LeftShoulderRigAttachment, -200, 200, duration)
+					makehingeconnections(ch.LeftLowerArm, ch.LeftLowerArm.LeftElbowRigAttachment, ch.LeftUpperArm.LeftElbowRigAttachment, 0, -60, duration)
+					makehingeconnections(ch.LeftHand, ch.LeftHand.LeftWristRigAttachment, ch.LeftLowerArm.LeftWristRigAttachment, -20, 20, duration)
+					--
+					makeballconnections(ch.RightUpperArm, ch.RightUpperArm.RightShoulderRigAttachment, ch.UpperTorso.RightShoulderRigAttachment, -200, 200, duration)
+					makehingeconnections(ch.RightLowerArm, ch.RightLowerArm.RightElbowRigAttachment, ch.RightUpperArm.RightElbowRigAttachment, 0, -60, duration)
+					makehingeconnections(ch.RightHand, ch.RightHand.RightWristRigAttachment, ch.RightLowerArm.RightWristRigAttachment, -20, 20, duration)
+					--
+					makeballconnections(ch.RightUpperLeg, ch.RightUpperLeg.RightHipRigAttachment, ch.LowerTorso.RightHipRigAttachment, -80, 80, duration)
+					makehingeconnections(ch.RightLowerLeg, ch.RightLowerLeg.RightKneeRigAttachment, ch.RightUpperLeg.RightKneeRigAttachment, 0, 60, duration)
+					makehingeconnections(ch.RightFoot, ch.RightFoot.RightAnkleRigAttachment, ch.RightLowerLeg.RightAnkleRigAttachment, -20, 20, duration)
+					--
+					makeballconnections(ch.LeftUpperLeg, ch.LeftUpperLeg.LeftHipRigAttachment, ch.LowerTorso.LeftHipRigAttachment, -80, 80, duration)
+					makehingeconnections(ch.LeftLowerLeg, ch.LeftLowerLeg.LeftKneeRigAttachment, ch.LeftUpperLeg.LeftKneeRigAttachment, 0, 60, duration)
+					makehingeconnections(ch.LeftFoot, ch.LeftFoot.LeftAnkleRigAttachment, ch.LeftLowerLeg.LeftAnkleRigAttachment, -20, 20, duration)
+				end)
+				if not dea then
+					coroutine.wrap(function()
+						task.wait(duration)
+						for i,v in pairs(savedglue) do
+							v[1].Part0 = v[2]
+							v[1].Part1 = v[3]
+							savedglue[i] = nil
+						end
+						chum.PlatformStand = false
+					end)()
+				end
+			end
+			if dea then
+				for i,v in pairs(ch:GetChildren()) do
+					if v:IsA("Accessory") then
+						if v:FindFirstChild("Handle") then
+							local attachment1 = v.Handle:FindFirstChildOfClass("Attachment")
+							if attachment1 then
+								for q,w in pairs(ch:GetChildren()) do
+									if w:IsA("Part") then
+										local attachment2 = w:FindFirstChild(attachment1.Name)
+										if attachment2 then
+											local hinge = Instance.new("HingeConstraint", v.Handle)
+											hinge.Attachment0 = attachment1
+											hinge.Attachment1 = attachment2
+											hinge.LimitsEnabled = true
+											hinge.LowerAngle = 0
+											hinge.UpperAngle = 0
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+function getwalldepth(rhitpos, dir, penamount, wall)
+	local rparams = RaycastParams.new()
+	rparams.FilterType = Enum.RaycastFilterType.Whitelist
+	rparams.FilterDescendantsInstances = {wall}
+	local startpos = rhitpos + (rhitpos - dir).unit * penamount
+	local castdir = startpos + (startpos - rhitpos).unit * -((startpos - rhitpos).magnitude)
+	local depthray = workspace:Raycast(startpos, (startpos - castdir).unit*-penamount, rparams)
+	--[[local l = Instance.new('Part', workspace)
+	l.Size = Vector3.new(0.4,0.4,0.4)
+	l.CFrame = CFrame.new(startpos)
+	l.BrickColor = BrickColor.Red()
+	l.Material = "Neon"
+	l.Anchored = true
+	local l = Instance.new('Part', workspace)
+	l.Size = Vector3.new(0.4,0.4,0.4)
+	l.CFrame = CFrame.new(castdir)
+	l.BrickColor = BrickColor.new("New Yeller")
+	l.Material = "Neon"
+	l.Anchored = true--]]
+	if depthray then
+		--[[local l = Instance.new('Part', workspace)
+		l.Size = Vector3.new(0.4,0.4,0.4)
+		l.CFrame = CFrame.new(depthray.Position)
+		l.BrickColor = BrickColor.new("Lime green")
+		l.Material = "Neon"
+		l.Anchored = true--]]
+		return true, depthray.Position, startpos, depthray.Normal
+	end
+end
+
+function dropshell()
+	local shell = Instance.new("SpawnLocation", gunmodel) --spawnlocation because its one of the only baseparts that dont go under tusks basepart limit
+	table.insert(rayignore, shell)
+	shell.Enabled = false
+	shell.Name = "shell;"
+	shell.Shape = "Cylinder"
+	shell.Size = Vector3.new(0.25,0.1,0.1)
+	shell.BrickColor = BrickColor.new("New Yeller")
+	shell.Material = "Glass"
+	shell.Anchored = true
+	shell.CanCollide = false
+	shell.CFrame = boltpart.CFrame * CFrame.new(0.1,0,0)
+	shell:BreakJoints()
+	local shellfunc
+	local shelltimepassed = 0
+	local playedshells = false
+	local currentshelly = math.random(1,10)/5
+	local currentshellx = math.random(8,15)
+	local ejectlookv = boltpart.CFrame.upVector
+	local ejectrightv = boltpart.CFrame.rightVector
+	shellfunc = runservice.Stepped:Connect(function(_, delta)
+		shelltimepassed = shelltimepassed + delta
+		shell.CFrame = CFrame.new(shell.Position, shell.Position+ejectlookv) 
+			* CFrame.new(0,currentshelly*delta,-currentshellx*delta)
+		shell.CFrame = CFrame.new(shell.Position, shell.Position+ejectrightv) 
+			* CFrame.Angles(0,math.pi/2,0)
+		currentshelly = currentshelly - delta*shellfallspeed
+		if shelltimepassed > shellflytime then
+			shell:Destroy()
+			shellfunc:Disconnect()
+		elseif shelltimepassed > shellflytime/2 and not playedshells then
+			playedshells = true
+			playsound(shellsound, 0, 1+mathr(-10,10)/65, 0.5)
+		end
+	end)
+end
+
+function pullbolt(btick)
+	cpose(poses.equip[1], "equip", 1, 0.25, btick)
+	task.wait(0.25)
+	if state ~= "unequipped" then
+		playsound(boltpsound, 0, 1+mathr(-10,10)/70, 0.5)
+	end
+	cpose(poses.equip[2], "equip", 2, 0.15, btick)
+	task.wait(0.15)
+	if equiptick == btick then
+		if bchambered.Value > 0 then
+			bchambered.Value = bchambered.Value - 1
+			dropshell()
+		end
+		if binmag.Value > 0 then
+			bchambered.Value = bchambered.Value + 1
+			binmag.Value = binmag.Value - 1
+		end
+	end
+	if adsing then
+		cpose(poses.ads[1], "aim", 1, 0.4, btick)
+	else
+		cpose(poses.equip[3], "equip", 3, 0.3, btick)
+	end
+end
+
+function bullethole(rhitpos, normal, hitthing)
+	local hol = Instance.new("SpawnLocation", workspace) --spawnlocation because its one of the only baseparts that dont go under tusks basepart limit
+	table.insert(rayignore, hol)
+	hol.Enabled = false	
+	hol.CanCollide = false
+	hol.Color = Color3.fromRGB()
+	hol.Shape = "Cylinder"
+	hol.Name = "bhole"
+	hol.Size = Vector3.new(0.02,0.2,0.2)
+	hol:BreakJoints()
+	hol.CFrame = CFrame.new(rhitpos, rhitpos+normal) * CFrame.Angles(0,math.pi/2,0)
+	debris:AddItem(hol, bulletholetime)
+	if not hitthing.Anchored or hitthing.Anchored and weldbholestoanchoredparts then
+		local holwel = Instance.new("Weld", hitthing)
+		holwel.C0 = hitthing.CFrame:ToObjectSpace(hol.CFrame)
+		holwel.Part0 = hitthing
+		holwel.Name = "bholeweld"
+		holwel.Part1 = hol
+		if hitthing.Parent:FindFirstChildOfClass("Humanoid") then
+			hol.BrickColor = BrickColor.new("Maroon")
+			hol.Material = "Pebble"
+			pemit(hol, Color3.fromRGB(100,0,0), 0.15, 0.35, 0.1, 0.2, 10, "Right", 0.1)
+		else
+			pemit(hol, hitthing.Color, 0.15, 0.35, 0.1, 0.2, 10, "Right", 0.1)
+		end
+		debris:AddItem(holwel, bulletholetime)
+	else
+		hol.Anchored = true
+	end
+	pcall(function() --vsb sound limit workaround
+		concretesoundtick = tick()
+		local backuptickconcrete = concretesoundtick
+		hitconcrete.SoundId = "rbxassetid://"..hitcsounds[math.random(1,#hitcsounds)]
+		if not table.find(soundsdisabledfromrefit, hitconcrete.Name) then
+			table.insert(soundsdisabledfromrefit, hitconcrete.Name)
+		end
+		hitconcrete.Parent = hol
+		hitconcrete:Play()
+		task.spawn(function()
+			task.wait(0.5)
+			if concretesoundtick == backuptickconcrete then
+				hitconcrete.Parent = handle
+				hitconcrete:Stop()
+				table.remove(soundsdisabledfromrefit, table.find(soundsdisabledfromrefit, hitconcrete.Name))
+			end
+		end)
+	end)
+end
+
+function clonemag(parent, name)
+	local clonedmag = magmodel:Clone()
+	local clonedmagpart = clonedmag:WaitForChild("magpart")
+	clonedmag.Name = name
+	clonedmag.Parent = parent
+	return clonedmag, clonedmagpart
+end
+
+remote.OnServerEvent:Connect(function(WHO, WHAT, param1)
+	if WHO == owner then
+		local backupremottick = equiptick
+		local ownercharhum = character:FindFirstChildOfClass("Humanoid")
+		if WHAT == "1" then
+			headrotationx = param1
+			local tiltvalue = math.clamp(headrotationx, -1, 0)
+			tween(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, false, 0, headw, {C0 = CFrame.new(0,1,0)  * headoffset.C0 * CFrame.Angles(headrotationx,0,tiltvalue/1.5) * CFrame.new(0,0.5,0)})
+		elseif WHAT == "2" and state == "idle" and tick() > ((lasttimeshot + gunspeed.Value) - 0.008) and bchambered.Value > 0 then
+			lasttimeshot = tick()
+			local hrpv = hrp.Velocity.Magnitude
+			--
+			remote:FireClient(owner, "recoil")
+			muzzleflash(Vector3.new(2,0.6,0.6), math.random(1,15)/10)
+			--
+			if adsing then
+				cpose(poses.ads[2], "shoot", 1, 0.07, backupremottick)
+			else
+				cpose(poses.shoot[1], "shoot", 1, 0.07, backupremottick)
+			end
+			--
+			playsound(shootsound, 0, 1+mathr(-10,10)/65, 1)
+			playsound(boltpsound, 0, 1.5+mathr(-10,10)/65, 1.5)
+			--the bullet
+			dropshell()
+			bchambered.Value = bchambered.Value - 1
+			local hitsomething = false
+			local currentbspeed = bspeed.Value
+			local currentbYspeed = 0
+			local bulletefunction
+			local bullett = Instance.new("SpawnLocation", workspace) --spawnlocation because its one of the only baseparts that dont go under tusks basepart limit
+			table.insert(rayignore, bullett)
+			bullett.Enabled = false
+			Instance.new("SpecialMesh", bullett).MeshType = Enum.MeshType.Sphere
+			bullett.Size = Vector3.new(bspeed.Value/5,0.25,0.25)
+			bullett.Transparency = 0.3
+			bullett.CanCollide = false
+			bullett.Anchored = true
+			bullett.Name = "bull"
+			bullett.Material = Enum.Material.Neon
+			bullett.CFrame = CFrame.new(lufa.Position, param1) 
+				* CFrame.Angles(math.rad(math.random(-hrpv,hrpv)/10),(-math.pi/2)+math.rad(math.random(-hrpv,hrpv)/10),0) 
+				* CFrame.new(-bullett.Size.x/2,0,0)
+			local battach = Instance.new("Attachment", bullett)
+			battach.Position = Vector3.new(bullett.Size.x/2,0,0)
+			battach.Visible = false
+			local currentpenamount = maxpen.Value
+			local pushfrompos = bullett.CFrame.p
+			local rparam = RaycastParams.new()
+			rparam.FilterDescendantsInstances = rayignore
+			rparam.FilterType = Enum.RaycastFilterType.Blacklist
+			bulletefunction = runservice.Stepped:Connect(function(_,b)
+				local currentlookv = bullett.CFrame.rightVector
+				local raye = workspace:Raycast(battach.WorldPosition, (bullett.CFrame.rightVector*(-currentbspeed*b*31)), rparam)
+				local rpos = battach.Position + (bullett.CFrame.rightVector*(-currentbspeed*b*31))
+				--[[local l = Instance.new('Part', character)
+				l.Size = Vector3.new(0.2,0.2,(battach.WorldPosition - rpos).magnitude)
+				l.Material = "Neon"
+				l.BrickColor = BrickColor.Red()
+				l.CFrame = CFrame.new(Vector3.new(), battach.WorldPosition+rpos) * CFrame.new(0,0,(battach.WorldPosition - rpos).magnitude/2)
+				l.Anchored = true
+				game.Debris:AddItem(l, 0.05)--]]
+				--print((battach.WorldPosition - (battach.WorldPosition + bullett.CFrame.rightVector*(-currentbspeed*b*30))).magnitude)
+				if raye then
+					--print(raye.Instance.Parent == table.find(rayignore, raye.Instance.Parent))
+					--print("HIT "..raye.Instance.Name.." "..raye.Instance.Parent.Name)
+					local destroybullet = false
+					local hithum = raye.Instance.Parent:FindFirstChildOfClass("Humanoid")
+					bullethole(raye.Position, raye.Normal, raye.Instance)
+					if hithum then
+						currentpenamount = currentpenamount + 0.3
+						local takedamage = damagelimbs[raye.Instance.Name]
+						if not takedamage then
+							takedamage = 15
+						end
+						if hithum.Health > 2000 then
+							hithum.MaxHealth = 500
+							hithum.Health = 500
+						end
+						if hithum.Health <= takedamage and hithum.Health > 0 then
+							hithum.Parent.Archivable = true
+							for i,v in pairs(hithum.Parent:GetDescendants()) do
+								if v:IsA("Sound") then
+									v:Destroy()
+								elseif v:IsA("Weld") and v.Name == "bholeweld" then
+									table.insert(ragdollbullettable, {v.Part0, v.Part1, v.C0})
+								end
+							end
+							hithum.Health = 0
+							local clr = hithum.Parent:Clone()
+							for i,v in pairs(hithum.Parent:GetChildren()) do
+								if v:IsA("BasePart") or v:IsA("ForceField") or v:IsA("Accessory") or v:IsA("Hat") then
+									v:Destroy()
+								end
+							end
+							clr.Parent = workspace
+							ragdollify(raye.Position, clr, ragdolldespawntime, true)
+						elseif raye.Instance.Name == "Head" then
+							push(raye.Position, raye.Instance, 10, 0.3)
+							ragdollify(raye.Position, hithum.Parent, 0.8, false)
+						end
+						hithum.Health = hithum.Health - takedamage
+					end
+					local canpierce, pierceendpoint, piercelookpoint, piercenormal = getwalldepth(raye.Position, battach.WorldPosition + bullett.CFrame.rightVector, currentpenamount, raye.Instance)
+					if hithum then
+						currentpenamount = currentpenamount - 0.3
+					end
+					if canpierce then
+						local wallthicknessmag = (raye.Position - pierceendpoint).magnitude
+						bullett.CFrame = CFrame.new(pierceendpoint, piercelookpoint) * CFrame.Angles(math.random(-20,20)/400,(-math.pi/2)+math.random(-20,20)/400,0) * CFrame.new(-bullett.Size.x/1.9,0,0)
+						currentpenamount = currentpenamount - wallthicknessmag
+						currentbspeed = currentbspeed - wallthicknessmag*5
+						if currentbspeed > 0 then
+							bullethole(pierceendpoint, piercenormal, raye.Instance)
+						end
+					elseif currentbspeed > 0 and currentpenamount > 0 and not hithum then --deflect
+						local reflec = raye.Position - currentlookv - ((1+(math.random(1,10)/10)) * currentlookv:Dot(raye.Normal) * -raye.Normal)
+						pushfrompos = reflec
+						bullett.CFrame = CFrame.new(raye.Position, reflec) * CFrame.Angles(0,-math.pi/2,0) * CFrame.new(-bullett.Size.x/2,0,0)
+						currentbspeed = currentbspeed - (currentbspeed/10)
+						currentpenamount = currentpenamount - (0.25+(currentpenamount)/10)
+					else
+						destroybullet = true
+					end
+					if destroybullet then
+						bullett:Destroy()
+						bulletefunction:Disconnect()
+					end
+				else
+					bullett.CFrame = bullett.CFrame * CFrame.new((-currentbspeed)*b*30,0,0)
+					if currentbYspeed < 3 then
+						bullett.CFrame = bullett.CFrame * CFrame.Angles(0,0,(currentbYspeed/10)*b*30)
+					end
+				end
+				currentbspeed = currentbspeed - (10*b)
+				currentbYspeed = currentbYspeed + (0.25*b)
+				bullett.Size = Vector3.new(currentbspeed/5,0.25,0.25)
+				battach.Position = Vector3.new(bullett.Size.x/2,0,0)
+				if currentbspeed < 0 then
+					bullett:Destroy()
+					bulletefunction:Disconnect()
+				end
+			end)
+			--
+			task.wait(0.07)
+			--
+			if binmag.Value > 0 then
+				bchambered.Value = bchambered.Value + 1
+				binmag.Value = binmag.Value - 1
+			end
+			if adsing then
+				cpose(poses.ads[1], "shoot", 2, 0.05, backupremottick)
+			else
+				cpose(poses.shoot[2], "shoot", 2, 0.1, backupremottick)
+			end
+			--
+			task.wait(gunspeed.Value-0.07)
+		elseif WHAT == "3" and state == "idle" then
+			state = "pullingbolt"
+			pullbolt(backupremottick)
+			state = "idle"
+		elseif WHAT == "4" and state == "idle" then
+			state = "reloading"
+			cpose(poses.reload[1], "reload", 1, 0.3, backupremottick)
+			task.wait(0.3)
+			if magleft.Value > 0 and state == "reloading" then
+				playsound(magreachsound, 0, 1+mathr(-10,10)/65, 2.5)
+				local handmagmo, handmagpart = clonemag(gunmodel, "reloadserver")
+				local handmagw = Instance.new("Weld", handmagmo)
+				handmagw.Name = "handmagweld"
+				handmagw.Part0 = mainpart
+				handmagw.Part1 = handmagpart
+				handmagw.C0 = CFrame.new(0.771263123, -2.07442856, -2.45114708, 0.108410954, 0.822345078, -0.558561325, -0.0455624163, 0.565389991, 0.823553741, 0.993062019, -0.0638353601, 0.0987635553)
+				cpose(poses.reload[2], "reload", 2, 0.25, backupremottick)
+				cindividualpose(poses.reloadmag[1].mag, handmagw, "reloadmag", 1, "mag", 0.25, backupremottick)
+				task.wait(0.25)
+				if state == "reloading" then
+					playsound(magoutsound, 0, 1+mathr(-10,10)/65, 0.8)
+					cpose(poses.reload[3], "reload", 3, 0.1, backupremottick)
+					cindividualpose(poses.reloadmag[2].mag, handmagw, "reloadmag", 2, "mag", 0.1, backupremottick)
+					local flingmagmo, flingmagpart = clonemag(gunmodel, "throwserver")
+					flingmagpart:SetNetworkOwner(owner)
+					local magv = Instance.new("BodyVelocity", flingmagpart)
+					magv.MaxForce = Vector3.new(1/0,1/0,1/0)
+					magv.Velocity = hrp.CFrame.lookVector*math.random(15,20)
+					local magav = Instance.new("BodyAngularVelocity", flingmagpart)
+					magav.MaxTorque = Vector3.new(1/0,1/0,1/0)
+					magav.AngularVelocity = hrp.CFrame.rightVector*math.random(15,20)
+					debris:AddItem(magv, 0.1)
+					debris:AddItem(flingmagmo, 0.5)
+					for i,v in pairs(magmodel:GetChildren()) do
+						if v:IsA("BasePart") then
+							v.Transparency = 1
+						end
+					end
+				end
+				task.wait(0.1)
+				cpose(poses.reload[4], "reload", 4, 0.15, backupremottick)
+				cindividualpose(poses.reloadmag[3].mag, handmagw, "reloadmag", 3, "mag", 0.15, backupremottick)
+				task.wait(0.15)
+				cpose(poses.reload[5], "reload", 5, 0.2, backupremottick)
+				cindividualpose(poses.reloadmag[4].mag, handmagw, "reloadmag", 4, "mag", 0.2, backupremottick)
+				if state == "reloading" then
+					playsound(maginsound, 0, 1+mathr(-10,10)/65, 0.8)
+				end
+				task.wait(0.2)
+				handmagmo:Destroy()
+				for i,v in pairs(magmodel:GetChildren()) do
+					if v:IsA("BasePart") then
+						v.Transparency = 0
+					end
+				end
+				if equiptick == backupremottick then
+					magleft.Value = magleft.Value - 1
+					binmag.Value = maxmagcap.Value
+				end
+			end
+			if bchambered.Value <= 0 then
+				pullbolt(backupremottick)
+				task.wait(0.25)
+			else
+				if adsing then
+					cpose(poses.ads[1], "aim", 1, 0.45, backupremottick)
+				else
+					cpose(poses.equip[3], "equip", 3, 0.45, backupremottick)
+				end
+			end
+			state = "idle"
+		elseif WHAT == "5" and state ~= "unequipped" then
+			adsing = param1
+			--if state == "idle" then
+				if adsing then
+					cpose(poses.ads[1], "aim", 1, 0.4, backupremottick)
+					savedws = 16
+					ownercharhum.WalkSpeed = 10
+				else
+					cpose(poses.equip[3], "equip", 3, 0.3, backupremottick)
+					if not sprinte then
+						ownercharhum.WalkSpeed = savedws
+					end
+				end
+			--end
+		elseif WHAT == "6" and state ~= "unequipped" then
+			sprinte = param1
+			if sprinte then
+				savedws = 16
+				ownercharhum.WalkSpeed = 21
+			else
+				ownercharhum.WalkSpeed = savedws
+			end
+		end
+	end
+end)
+
+tool.Equipped:Connect(function()
+	state = "equipping"
+	equiptick = tick()
+	local backuptick = equiptick
+	owner = players:GetPlayerFromCharacter(tool.Parent)
+	character = owner.Character
+	table.insert(rayignore, character)
+	torso = character:WaitForChild("Torso")
+	larm = character:FindFirstChild("Left Arm")
+	rarm = character:FindFirstChild("Right Arm")
+	lleg = character:FindFirstChild("Left Leg")
+	rleg = character:FindFirstChild("Right Leg")
+	head = character:FindFirstChild("Head")
+	hrp = character:FindFirstChild("HumanoidRootPart")
+	--anims sound and stuff
+	rightgrip = weld(rarm, handle, "RightGrip", CFrame.new(-0.612442017, -0.0641784668, 0.243187428, -0.190242305, 0.981636524, -0.0140367029, 0.97735244, 0.188023433, -0.0971002579, -0.0926780254, -0.0321914665, -0.99517554))
+	headw = weld(torso, head, "HeadWeld", CFrame.new(0,1.5,0))
+	larmw = weld(head, larm, "LeftArmWeld", CFrame.new(-1.5,-1.5,0))
+	rarmw = weld(head, rarm, "RightArmWeld", CFrame.new(1.5,-1.5,0))
+	torsow = weld(hrp, torso, "HumanoidRootPartWeld", CFrame.new())
+	if bchambered.Value <= 0 and binmag.Value > 0 then
+		pullbolt(backuptick)
+	else
+		cpose(poses.equip[3], "equip", 3, 0.3, backuptick)
+		task.wait(0.25)
+	end
+	if state == "equipping" and equiptick == backuptick then
+		state = "idle"
+	end
+end)
+tool.Unequipped:Connect(function()
+	state = "unequipped"
+	if adsing or sprinte then
+		character:FindFirstChildOfClass("Humanoid").WalkSpeed = savedws
+	end
+	adsing = false
+	table.remove(rayignore, table.find(rayignore, character))
+	pcall(function()
+		headw.Parent = nil
+	end)
+	pcall(function()
+		larmw.Parent = nil
+	end)
+	pcall(function()
+		torsow.Parent = nil
+	end)
+	pcall(function()
+		rarmw.Parent = nil
+	end)
+	pcall(function()
+		rightgrip.Parent = nil
+	end)
+	pcall(function()
+		--llegw.Parent = nil
+	end)
+	pcall(function()
+		--rlegw.Parent = nil
+	end)
+end)
